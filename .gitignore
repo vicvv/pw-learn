@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Playwright output
+test-results/
+playwright-report/
+
+# Secrets / auth state (Module 8)
+.env
+auth/
+*.storage.json
+
+# macOS
+.DS_Store

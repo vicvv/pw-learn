@@ -1,6 +1,22 @@
 PLAYWRIGHT WITH PYTHON - A HANDS-ON LEARNING COURSE
 
 
+MODULES AT A GLANCE
+
+| #  | Topic                                   | Notes                                                | Code                                   |
+|----|-----------------------------------------|------------------------------------------------------|----------------------------------------|
+| 01 | Setup                                   | [01-setup.md](DOCS/01-setup.md)                      | `FILES/test_01_setup.py`               |
+| 02 | Locators                                | 02-locators.md                                       | `FILES/test_02_locators.py`            |
+| 03 | Assertions & auto-waiting               | 03-assertions.md                                     | `FILES/test_03_assertions.py`          |
+| 04 | Debugging (UI mode, trace viewer)       | 04-debugging.md                                      | `FILES/test_04_debugging.py`           |
+| 05 | Fixtures & Page Object Model            | 05-fixtures-pom.md                                   | `FILES/test_05_fixtures_pom.py`        |
+| 06 | Parallel runs & retries                 | 06-parallel-retries.md                               | `FILES/test_06_parallel_retries.py`    |
+| 07 | API testing & network mocking           | 07-api-mocking.md                                    | `FILES/test_07_api_mocking.py`         |
+| 08 | Authentication & storage state          | 08-auth-state.md                                     | `FILES/test_08_auth_state.py`          |
+| 09 | CI/CD with GitHub Actions               | 09-ci-cd.md                                          | `.github/workflows/playwright.yml`     |
+| 10 | Visual & accessibility testing          | 10-visual-a11y.md                                    | `FILES/test_10_visual_a11y.py`         |
+
+
 WHAT THIS IS
 
 Notes and practice code from learning browser test automation with Playwright, Python and pytest, from a first test to tests that run automatically on GitHub Actions.
