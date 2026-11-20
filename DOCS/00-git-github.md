@@ -2,14 +2,14 @@ GIT AND GITHUB - FROM A NEW REPO TO THE FIRST PUSH
 
 GOAL
 
-Create a repo on GitHub, connect a project folder on your Mac to it, and push. The steps below are in the order that avoids every error listed at the end. After the first push, you only need the everyday loop.
+Create a repo on GitHub, connect a project folder on your Mac/PC to it, and push. The steps below are in the order that avoids every error listed at the end. After the first push, you only need the everyday loop.
 
 
 THE BIG PICTURE
 
 There are two copies of the repo:
 
-- Local: the folder on your Mac. git add and git commit only change this copy.
+- Local: the folder on your Mac/PC. git add and git commit only change this copy.
 - Remote: the repo on GitHub, called "origin". Only git push sends commits there, and only git pull brings them back.
 
 ```
@@ -89,7 +89,7 @@ STEP 4 - ADD YOUR PROJECT FILES
 
 Create the venv, install the packages, and add the files (README.md, pytest.ini, requirements.txt, DOCS/, FILES/). See DOCS/01-setup.md.
 
-When a doc gives a file's contents, paste only the contents into the file in VS Code. Lines like cat > file << 'EOF' and EOF are terminal commands, never part of the file.
+When a doc gives a file's contents, paste only the contents into the file in VS Code. Lines like cat > file << 'EOF' and EOF are terminal commands, never part of the file unless you want to create a file from the shell.
 
 
 STEP 5 - THE FIRST COMMIT

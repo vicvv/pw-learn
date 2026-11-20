@@ -155,7 +155,7 @@ EOF
 
 - testpaths = FILES: a plain "pytest" only looks in FILES/.
 - pythonpath = FILES: later modules can import helpers from FILES/pages/.
-- pytest.ini must keep this exact name, with no module prefix.
+- pytest.ini must keep this exact name.
 
 
 7. FIRST TEST - FILES/TEST_01_SETUP.PY
