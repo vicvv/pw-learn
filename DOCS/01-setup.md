@@ -65,6 +65,8 @@ EOF
 
 The quoted 'EOF' makes the heredoc literal: no variables or commands inside it are expanded.
 
+This whole block is a terminal command that creates the file. If you create the file in VS Code instead, paste only the lines between the cat line and the EOF line. The cat and EOF lines are never part of the file.
+
 Check it was written correctly:
 
 ```
@@ -87,13 +89,34 @@ pip install pytest-playwright
 - To leave the venv: deactivate
 
 
-4. CORPORATE NETWORKS ONLY - CERTIFICATE FIX
+4. CERTIFICATE ERRORS - ONLY ON SOME NETWORKS
 
-Symptom: playwright install fails with SELF_SIGNED_CERT_IN_CHAIN.
+Symptom: playwright install fails with SELF_SIGNED_CERT_IN_CHAIN (or a similar certificate error).
 
-Why: many corporate networks inspect HTTPS traffic and re-sign it with their own root certificate. The computer trusts it, but Playwright's installer runs on Node.js, which uses its own certificate list and ignores the computer's keychain.
+Why: many company networks inspect HTTPS traffic and re-sign it with the company's own root certificate. A program only accepts that if it trusts the company certificate.
 
-Fix (macOS): export the certificates the Mac already trusts, and point Node at them.
+- Your browser uses the Mac's keychain (the Mac's list of trusted certificates). If the company certificate is in the keychain, the browser works.
+- Playwright's installer runs on Node.js, which has its own built-in certificate list and ignores the keychain. The company certificate is not on that list, so Node refuses the connection.
+
+Do you need a fix?
+
+- Home network, no VPN: no. Public sites present normal certificates that Node already trusts. Run playwright install chromium and skip the rest of this section.
+- Company network (office or company Wi-Fi): often yes.
+- Company VPN on any Mac: maybe. Many VPNs only send company traffic through the VPN (split tunneling), and public sites go straight over your home internet. Others send everything through the company network, where it may be inspected.
+
+How to check: try playwright install chromium first. You only need a fix if it fails with a certificate error. You can also see who signed the certificate you are getting:
+
+```
+openssl s_client -connect cdn.playwright.dev:443 </dev/null 2>/dev/null | grep "issuer="
+```
+
+- A public certificate authority (for example Google Trust Services, Let's Encrypt, DigiCert): no fix needed.
+- A company name or a security product: that network re-signs traffic, so a fix is needed.
+
+
+4A. WORK MAC ON THE COMPANY NETWORK (CERTIFICATE ALREADY INSTALLED)
+
+On a company-managed Mac, IT has usually already put the company certificate in the keychain. Export the certificates the Mac trusts and point Node at them:
 
 ```
 mkdir -p "$HOME/.certs"
@@ -118,7 +141,53 @@ security find-certificate -a -p ~/Library/Keychains/login.keychain-db >> "$HOME/
 
 Or ask your IT team for the official certificate bundle, or an internal mirror (set with PLAYWRIGHT_DOWNLOAD_HOST).
 
-Never use NODE_TLS_REJECT_UNAUTHORIZED=0. It switches off certificate checking completely.
+
+4B. PERSONAL MAC ON A COMPANY VPN (CERTIFICATE NEEDED)
+
+On a personal Mac, the company certificate is not installed, so there is nothing to export. Get it from the company:
+
+1. Ask the company's IT or support desk for the root certificate used for traffic inspection. It usually comes as a .pem, .cer or .crt file, often with their own instructions.
+2. Before installing it, check with them:
+   - Are personal devices allowed on the VPN? Some companies only allow managed devices.
+   - Privacy: once your Mac trusts their root certificate, the company can read your HTTPS traffic whenever it goes through their network. Only install it if you are comfortable with that.
+3. Never download a "company certificate" from anywhere else, and never trust one just because a connection showed it to you. Whoever controls a trusted root certificate can read your HTTPS traffic.
+
+Then point Node at the file (use the real file name):
+
+```
+mkdir -p "$HOME/.certs"
+cp ~/Downloads/company-root.pem "$HOME/.certs/"
+grep -q NODE_EXTRA_CA_CERTS ~/.zshrc || echo 'export NODE_EXTRA_CA_CERTS="$HOME/.certs/company-root.pem"' >> ~/.zshrc
+source ~/.zshrc
+source .venv/bin/activate
+playwright install chromium
+```
+
+If IT gave you a .cer file, convert it first, because Node needs PEM text. If the file is already PEM, openssl just rewrites it:
+
+```
+openssl x509 -in ~/Downloads/company-root.cer -out "$HOME/.certs/company-root.pem"
+```
+
+- If IT also tells you to add the certificate to the keychain (double-click the file, then set it to "Always Trust"), that covers browsers and most other apps. Node still needs NODE_EXTRA_CA_CERTS, because it ignores the keychain.
+- When you stop using that VPN, remove the NODE_EXTRA_CA_CERTS line from ~/.zshrc and the certificate from the keychain.
+
+
+4C. PERSONAL MAC AT HOME (NO VPN)
+
+No certificate is needed. Run:
+
+```
+playwright install chromium
+```
+
+If you copied ~/.zshrc from a work Mac, it may contain a NODE_EXTRA_CA_CERTS line pointing to a .pem file that does not exist on this Mac. Node warns that it is ignoring the extra certificates and carries on, so it is harmless. To keep things tidy, remove that line.
+
+
+4D. RULES FOR EVERY CASE
+
+- Never use NODE_TLS_REJECT_UNAUTHORIZED=0. It switches off certificate checking completely.
+- Other tools with their own certificate list (for example Python's requests library or Docker) can fail the same way on the same network. Each has its own setting for pointing at a certificate file.
 
 
 5. INSTALL THE BROWSER AND PIN VERSIONS
@@ -150,12 +219,18 @@ cat > pytest.ini << 'EOF'
 [pytest]
 testpaths = FILES
 pythonpath = FILES
+filterwarnings =
+    ignore:Session-scoped fixtures defined as instance methods
 EOF
 ```
 
+If you create the file in VS Code instead, paste only the lines between the cat line and the EOF line.
+
 - testpaths = FILES: a plain "pytest" only looks in FILES/.
 - pythonpath = FILES: later modules can import helpers from FILES/pages/.
-- pytest.ini must keep this exact name.
+- filterwarnings: hides one harmless deprecation warning that comes from the pytest-playwright plugin, not from your code. Other warnings still show.
+- pytest.ini must keep this exact name, with no module prefix.
+- When pytest reads the file, its output shows a "configfile: pytest.ini" line. If that line is missing, the file is missing or misnamed (check with ls pytest.ini).
 
 
 7. FIRST TEST - FILES/TEST_01_SETUP.PY
@@ -179,6 +254,8 @@ def test_get_started_link(page: Page):
     expect(page.get_by_role("heading", name="Installation")).to_be_visible()
 EOF
 ```
+
+If you create the file in VS Code instead, paste only the lines between the cat line and the EOF line. A cat line inside a .py file makes pytest fail with "NameError: name 'cat' is not defined".
 
 Key ideas:
 
@@ -379,11 +456,81 @@ ANSWERS
 
 7. The remote has a commit you do not have, so the histories are unrelated. Options: git pull origin main --allow-unrelated-histories, then push; or delete the GitHub repo and create it again empty; or git push --force, but only on a brand-new personal repo, never on a shared branch.
 
-8. The browser uses the macOS keychain, which contains the corporate root certificate. The installer runs on Node.js, which has its own certificate list. Fix: NODE_EXTRA_CA_CERTS pointing to a .pem file with the trusted certificates.
+8. The browser uses the macOS keychain, which contains the corporate root certificate. The installer runs on Node.js, which has its own certificate list. Fix: NODE_EXTRA_CA_CERTS pointing to a .pem file with the trusted certificates. On a home network without a VPN, traffic is not re-signed, so no fix is needed.
 
 9. The author name and email stored in every commit (git log shows them). Use GitHub's no-reply address before the first commit.
 
 10. Install the browser with its system libraries: playwright install --with-deps chromium. Or run the tests inside Microsoft's official Playwright Docker image (mcr.microsoft.com/playwright/python), with a tag that matches your Playwright version. Bonus: CI has no screen, so the tests run headless, which is already the default.
+
+On a Mac, playwright install chromium is all you need. It downloads only the browser, into Playwright's own folder. The system libraries Chromium needs to run (for drawing, fonts, sound and so on) already come with macOS.
+
+A Linux machine, such as a GitHub Actions runner or a server, is different. It is often a bare system, and many of those libraries are missing. The browser downloads fine, but it cannot start. The error usually mentions missing shared libraries (files ending in .so) or says the browser failed to launch.
+
+There are two fixes.
+
+
+Fix 1 - install the browser together with its Linux libraries
+
+```
+playwright install --with-deps chromium
+```
+
+- --with-deps means "also install the system packages this browser needs".
+- It is meant for Linux. It uses the system package manager, so it may need sudo, which GitHub's runners already have. You never need it on your Mac.
+- The libraries are installed on that machine only. On a runner, which is thrown away after each job, this runs on every job.
+
+
+Fix 2 - run the tests inside the official Playwright Docker image
+
+Microsoft publishes a Docker image that already has Python, the browsers and all their Linux libraries:
+
+```
+mcr.microsoft.com/playwright/python
+```
+
+The tests run inside a container started from that image, so nothing has to be installed on the machine itself.
+
+Choose an image tag that matches your Playwright version. Browser builds are tied to the library version, so a mismatch can fail in strange ways (for example, "Executable doesn't exist"). Check your version:
+
+```
+pip show playwright
+```
+
+The Version line, for example 1.49.0, gives the tag, for example v1.49.0-noble. The tag list is on Playwright's Docker page: https://playwright.dev/python/docs/docker
+
+Trying it on your Mac (needs Docker installed), from the repo root, using your real version in the tag:
+
+```
+docker run --rm -it --ipc=host -v "$PWD":/work -w /work mcr.microsoft.com/playwright/python:v<version>-noble /bin/bash
+```
+
+Then, inside the container:
+
+```
+pip install -r requirements.txt
+pytest
+```
+
+- --rm deletes the container when you exit, so nothing is left behind.
+- -it gives you an interactive shell inside the container.
+- --ipc=host is recommended by Playwright for Chromium. Without it, Chromium can run out of memory and crash.
+- -v "$PWD":/work makes your repo folder available inside the container as /work, and -w /work starts you in that folder.
+- Type exit to leave the container.
+
+
+Which fix to use
+
+- Fix 1 is the simplest on GitHub Actions, and Module 09 uses it.
+- Fix 2 gives the same environment on every machine (your Mac, a teammate's laptop, any CI system), because everyone uses the same image.
+- Either way, a CI machine has no screen, so tests run headless. That is already the default, so do not add --headed in CI.
+
+
+Traps
+
+- Do not use your Mac's .venv inside the container. It was built for macOS and does not work on Linux. Install from requirements.txt inside the container instead, as above.
+- If you use the official image, the playwright version in requirements.txt must match the image tag. When you upgrade Playwright, change both.
+- On a company network, pip install inside a container can fail with a certificate error, because the container does not see your Mac's keychain or NODE_EXTRA_CA_CERTS. The proper fix is to add the company certificate to the image, not to switch off certificate checks.
+- Docker Desktop is free for personal use, but larger companies need a paid license. On a work Mac, check what your company provides before installing it.
 
 
 End of Module 01. Next up: Module 02, locators (finding elements the way users see them).
