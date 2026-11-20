@@ -373,17 +373,29 @@ No personal emails, tokens, internal URLs or company data in code, commits or do
 
 HANDS-ON PRACTICE
 
-1. Run the tests and confirm 2 passed:
+1. Run the tests:
 
 ```
 pytest -v
 ```
+
+   Expect 2 passed. Near the top of the output there should be a "configfile: pytest.ini" line. If it is missing, pytest.ini is missing or misnamed (check with ls pytest.ini).
 
 2. Watch them run:
 
 ```
 pytest --headed --slowmo 500
 ```
+
+   Chrome opens playwright.dev, clicks "Get started" and lands on the Installation page.
+
+If a test fails because the site changed:
+
+The tests rely on playwright.dev's current page title, link text and heading. The site can change after these notes were written. If a test times out on a locator:
+
+- Open the site with playwright codegen https://playwright.dev/ and hover over the link or heading. Codegen shows the locator it would use today.
+- Compare it with the locator in the test, and update the test to match.
+- If asking for help, include the full error output: the line that failed and the locator in the error message.
 
 Break it on purpose (this step is MEANT to fail):
 
@@ -395,6 +407,7 @@ Break it on purpose (this step is MEANT to fail):
 2. Run pytest -v. The test fails after about 5 seconds, because expect keeps retrying before it gives up.
 3. Read the error: it names the locator it was waiting for and says it timed out.
 4. Change line 15 back and run again. 2 passed.
+
 
 
 MENTAL MODEL

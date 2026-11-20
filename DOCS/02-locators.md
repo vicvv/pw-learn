@@ -204,7 +204,7 @@ HANDS-ON PRACTICE
 pytest FILES/test_02_locators.py -v
 ```
 
-   Expect 7 passed.
+   Expect 7 passed. A plain "pytest" now runs 9 tests: 2 from Module 01 and 7 from Module 02.
 
 2. Watch them:
 
@@ -217,6 +217,14 @@ pytest FILES/test_02_locators.py --headed --slowmo 500
 ```
 playwright codegen https://demo.playwright.dev/todomvc/
 ```
+
+If a test fails because the demo site changed:
+
+The tests rely on the demo site's current labels and test ids. They were written from Playwright's own TodoMVC examples, but the site can change after these notes were written. If a test times out on its first locator:
+
+- Open the site with playwright codegen https://demo.playwright.dev/todomvc/ and hover over the element. Codegen shows the locator it would use today.
+- Compare it with the locator in the test, and update the test to match.
+- If asking for help, include the full error output: the line that failed and the locator in the error message.
 
 Break it on purpose (this step is MEANT to fail):
 
