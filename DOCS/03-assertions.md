@@ -428,166 +428,171 @@ QUIZ (answers below - try before peeking)
 8. DevOps stretch question: tests pass on your Mac but sometimes time out on CI. Someone suggests setting every timeout to 60 seconds. Is that a good idea? (Just guess.)
 
 
+FALSE POSITIVES AND FALSE NEGATIVES
+
+A test's job is to detect problems, so a failing test means "a problem was detected". Two things can go wrong:
+
+- False positive (a false alarm): the test fails, but the app works. Example: the test checked the text before the page had finished updating.
+- False negative (a missed bug): the test passes, but the app is broken. Example: a test clicks Save and only checks that the Save button exists, so it passes even when saving does nothing.
+
+Timing mistakes cause false positives: reading a value once (inner_text(), count(), is_visible()), fixed pauses, or a timeout that is too short for a slow step. Waiting assertions (expect) prevent them.
+
+Weak assertions cause false negatives: checking something that would be true whether or not the feature works. Assert on the result a user would see.
+
+
+QUIZ (answers below - try before peeking)
+
+1. click() is called on a button that will not be ready for a while. What does click() wait for, and what happens if the button is still not ready after 30 seconds?
+
+2. In test_reading_does_not_wait, line 99 is: assert page.get_by_test_id("result").inner_text() == "". What does inner_text() return at that moment, and why does the test pass?
+
+3. Which line should you use to check the result, and why?
+   assert page.get_by_test_id("result").inner_text() == "Done"
+   expect(page.get_by_test_id("result")).to_have_text("Done")
+
+4. A report takes 8 seconds to appear, and expect(report).to_be_visible() fails after 5 seconds. Write the fixed line.
+
+5. An element's text is "1 item left". Does expect(locator).to_have_text("item") pass? If not, what do you use instead?
+
+6. How do you check that a success message has disappeared, and why is assert not message.is_visible() a bad way to do it?
+
+7. A teammate adds page.wait_for_timeout(3000) before an assertion "because the page is slow sometimes". What is wrong with that, and what should they write instead?
+
+8. DevOps stretch question: tests pass on your Mac but sometimes time out on CI. Someone suggests setting every timeout to 60 seconds. Why is that a poor first fix, and what should you do instead? (Just guess.)
+
+
 ANSWERS
 
 
-1. What does click() wait for before it clicks, and what happens if the element never becomes ready?
+1. click() waits until the button is attached, visible, stable, not covered by anything, and enabled, then clicks. If it is still not ready after 30 seconds, click() fails with an error that names the check that was still failing.
 
-Answer: click() waits until the element passes all its actionability checks: it is attached to the page, visible, stable, receives events (nothing is covering it), and enabled. Then it clicks. If those checks do not all pass within the action timeout (30 seconds by default), the click fails with an error that says which check was still failing.
+Why: these are the actionability checks. Playwright repeats them until all pass, so a slow page is simply waited for. In test_click_waits_for_enabled (line 104), the Go button is disabled for 1 second, and click() waits for it with no extra code.
 
-What each check protects you from:
-- attached and visible - clicking something that has not appeared yet
-- stable - clicking a button while it is still sliding into place, so the click lands somewhere else
-- receives events - clicking a button that is covered by a loading overlay or a popup, so the click would hit the overlay instead
-- enabled - clicking a button that is still disabled, for example until a form is filled in
+The error tells you where to look:
+- "element is not visible" - it never appeared, or is hidden
+- "element is not enabled" - it stayed disabled
+- "... intercepts pointer events" - something is covering it, such as an overlay or a popup
 
-You saw this in test_click_waits_for_enabled: the Go button is disabled for one second, and click() simply waits for it.
+If the page is legitimately slower than 30 seconds, the failure is a false positive (the app works, but time ran out). Give that one step more time: click(timeout=60_000).
 
-Common wrong answers:
-- "click() clicks straight away." It does not. It waits until the element is ready.
-- "It waits 5 seconds." 5 seconds is the default for expect assertions. Actions wait up to 30 seconds by default.
-- "If the button is disabled, click() fails immediately." It waits for it to become enabled, and only fails if that never happens within the timeout.
+Common mistakes:
+- Thinking click() fails straight away on a slow page. It waits up to the timeout.
+- Mixing up the defaults: actions wait up to 30 seconds, expect assertions 5 seconds.
 
-See: ACTIONS WAIT: ACTIONABILITY CHECKS.
+See: ACTIONS WAIT: ACTIONABILITY CHECKS, and FALSE POSITIVES AND FALSE NEGATIVES.
 
 
-2. test_reading_does_not_wait asserts that the result text is empty right after clicking Start, and it passes. What does that show?
+2. inner_text() returns an empty text (""), because it reads the result box once, immediately after the click, and "Done" only appears 1.5 seconds later. The test passes because the box really is empty at that moment.
 
-Answer: it shows that inner_text() reads the page once, at that instant, and does not wait. "Done" only appears 1.5 seconds after the click, so at the moment of reading, the box is still empty.
+Why: inner_text() does not wait for any particular text. It returns whatever the element contains right now. The test exists to prove that. The test before it, test_expect_waits_for_text (line 92), uses the same page and the same click, but expect(...).to_have_text("Done") keeps checking until "Done" appears.
 
-Why the test exists: it makes the difference between reading and asserting visible. Compare it with the test just before it, test_expect_waits_for_text. Same page, same click, but expect(...).to_have_text("Done") keeps checking until "Done" appears, and passes.
+The lesson: read with inner_text(), check with expect. If you checked for "Done" with inner_text(), the test would always fail on this page, and fail only sometimes on a real app (a flaky test).
 
-What this means for real tests: if you wrote assert page.get_by_test_id("result").inner_text() == "Done" after the click, it would fail every time on this page, and on real pages it would fail sometimes, depending on how fast the page was. That is a flaky test.
-
-Common wrong answers:
-- "The page is broken, the result should be Done." The page is fine. It shows "Done" 1.5 seconds later, exactly as written.
-- "inner_text() waits for text to appear." It waits for the element to exist, but not for any particular text. It returns whatever text is there right now, even if that is nothing.
+Common mistakes:
+- Reading the test as "you should use inner_text()". It shows the opposite: inner_text() is too early for checking a result.
+- Thinking the page is broken because the text is empty. The page shows "Done" 1.5 seconds later, as written.
 
 See: READING VALUES DOES NOT WAIT.
 
 
-3. Which is better, and why?
-   assert page.get_by_test_id("result").inner_text() == "Done"
-   expect(page.get_by_test_id("result")).to_have_text("Done")
+3. The expect line. It retries until the text is "Done" (or 5 seconds pass), while the assert reads once, immediately, and fails if "Done" has not appeared yet.
 
-Answer: the expect version. It retries until the text is "Done" or the timeout runs out. The plain assert reads once, immediately, and fails if the text is not there yet.
+Why: right after the click, the box is still empty.
+- assert ... inner_text() == "Done" reads "" once, the comparison is False, and the test fails. It never looks again. That is a false positive: the app works, the test checked too early.
+- expect(...).to_have_text("Done") reads "", waits a moment, reads again, and repeats until it sees "Done". It passes as soon as "Done" appears.
 
-Step by step, right after an action that makes "Done" appear a moment later:
-- The plain assert reads the text: it is still empty. The comparison is False. The test fails at once, and never looks again.
-- expect reads the text: still empty. It waits briefly, reads again, and repeats until it sees "Done". The test passes as soon as "Done" appears.
+expect also gives a better error when it fails: the expected text, the last text it saw, and a log of its attempts.
 
-A second advantage: when expect does fail, its error message shows the expected text, the last text it saw, and a log of its attempts. A plain assert only shows the two values at that one moment.
+The same rule applies to every reading call: count() -> to_have_count, is_visible() -> to_be_visible, input_value() -> to_have_value.
 
-Common wrong answers:
-- "They are the same, both check the text." They check the same thing, but at different times: once versus until true.
-- "The assert is better because it is faster." It only looks faster. It fails on slower days, and a flaky test costs far more time than the fraction of a second expect might wait.
-- "Add time.sleep(2) before the assert." That wastes 2 seconds every run, and on a slow day 2 seconds may still not be enough.
+Common mistakes:
+- "Both check the same thing." They check the same value, but at different times: once versus until true.
+- Adding time.sleep() before the assert. It is slower, and can still be too short.
 
 See: READING VALUES DOES NOT WAIT, and Trap 1.
 
 
-4. A report takes 8 seconds to appear, and expect(report).to_be_visible() fails after 5 seconds. How do you fix it properly?
+4. expect(report).to_be_visible(timeout=15_000)
 
-Answer: give this one assertion a longer timeout:
+Why: timeout= gives this one assertion more time. It still moves on as soon as the report appears: if it shows up after 8 seconds, the assertion passes after 8 seconds, not 15. Every other assertion keeps the 5-second default, so real failures elsewhere are still reported quickly.
 
-```python
-expect(report).to_be_visible(timeout=15_000)
-```
+This is the same technique as test_custom_timeout, line 112: to_have_text("Done", timeout=10_000).
 
-That allows up to 15 seconds for this step only. If the report appears after 8 seconds, the assertion passes after 8 seconds. It does not wait the full 15.
+Pick a number comfortably above the normal time, such as 15 seconds for an 8-second report. A huge value like 120 seconds would hide a report that has become much slower.
 
-Why this is the right fix: the report is legitimately slow, so this step needs more time. Every other step keeps the normal 5-second limit, so real failures elsewhere are still reported quickly.
-
-Common wrong answers:
-- time.sleep(8) before the assertion. Wastes 8 seconds every run, and fails anyway on a day when the report takes 9.
-- page.wait_for_timeout(8000). The same problem: it is a fixed pause too.
-- expect.set_options(timeout=15_000) for every test. Fixes this test, but makes every other failure take 15 seconds to show up, and can hide other slow pages.
+Common mistakes:
+- Naming the test (test_custom_timeout) instead of the setting it uses. What you copy is timeout=.
 - timeout=15. Timeouts are in milliseconds, so that is 15 milliseconds. Write 15_000.
-
-If the report regularly takes much longer than expected, that may be a performance problem worth reporting, not just a timeout to raise.
+- time.sleep(8) or wait_for_timeout(8000). Fixed pauses: slower, and they fail on a day the report takes 9 seconds.
+- expect.set_options(timeout=15_000) for all tests. Makes every other failure slower to report.
 
 See: TIMEOUTS, Trap 4 and Trap 9.
 
 
-5. An element's text is "1 item left". Does expect(locator).to_have_text("item") pass? What would you use instead?
+5. No. to_have_text compares the whole text, and "item" is not the whole of "1 item left". Use expect(locator).to_contain_text("item").
 
-Answer: no. to_have_text with a plain string compares the whole text of the element. "item" is not the whole text, so the assertion keeps retrying and fails after 5 seconds. To check part of the text, use to_contain_text:
+Why: to_have_text("item") keeps retrying for 5 seconds, never sees exactly "item", and fails. to_contain_text checks for part of the text, so it passes.
 
-```python
-expect(locator).to_contain_text("item")          # passes
-expect(locator).to_have_text("1 item left")       # also passes: the whole text
-```
+Which to use:
+- to_have_text("1 item left") - when the exact text matters
+- to_contain_text("item") - when the element also contains text you do not care about
+- to_have_text(re.compile(r"\d+ items? left")) - when part of the text changes, such as the number
 
-Which to choose:
-- to_have_text when you know the exact text and it matters, for example the counter must say exactly "1 item left".
-- to_contain_text when the element contains other text you do not care about, such as a date or a count.
-- A regular expression when part of the text changes: to_have_text(re.compile(r"\d+ items? left")) passes for "1 item left" and "3 items left".
-
-Common wrong answers:
-- "Yes, it passes, because to_have_text matches part of the text." That is how get_by_text and name= work in locators (Module 02), which makes this easy to mix up. Assertions are different: to_have_text compares the whole text.
+Common mistakes:
+- Expecting to_have_text to match part of the text, because locators do. get_by_text("item") and name="item" match part of the text (Module 02), but the to_have_text assertion compares the whole.
 
 See: TEXT: WHOLE, PART, LISTS AND PATTERNS, and Trap 5.
 
 
-6. How do you check that a success message has disappeared, and why not assert not message.is_visible()?
+6. Use expect(message).to_be_hidden(). It keeps checking until the message is hidden or removed, while is_visible() checks only once and fails if the message is still showing at that instant.
 
-Answer: use a waiting assertion:
+Why: success messages usually stay for a few seconds or fade out slowly. assert not message.is_visible() reads once. If the message is still on screen, is_visible() returns True, the assert fails, and it never checks again. That is a false positive. to_be_hidden() waits until the message is gone, up to 5 seconds.
 
-```python
-expect(message).to_be_hidden()
-# or the same thing:
-expect(message).not_to_be_visible()
-```
+expect(message).not_to_be_visible() means exactly the same as to_be_hidden().
 
-It keeps checking until the message is gone (hidden, or removed from the page), then passes. If it is still showing after the timeout, it fails.
-
-Why not assert not message.is_visible(): is_visible() checks once, right now. Messages often stay for a few seconds or fade out slowly. If the check happens while the message is still fading, is_visible() returns True, the assert fails, and it never checks again. The test is flaky.
-
-Common wrong answers:
-- expect(message).not_to_be_attached(). Too strict if the app only hides the message instead of removing it from the page. to_be_hidden() accepts both.
-- time.sleep(5), then check. Slow, and still fails if the message takes 6 seconds to go.
+Common mistakes:
+- Answering only "check that it is hidden" without the reason. The reason is the point: is_visible() reads once, expect retries.
+- expect(message).not_to_be_attached(). Too strict if the app only hides the message instead of removing it.
 
 See: NEGATIVE ASSERTIONS, and Trap 6.
 
 
-7. A teammate adds page.wait_for_timeout(3000) before an assertion "because the page is slow sometimes". What is wrong with that, and what should they do?
+7. A fixed pause always waits the full 3 seconds, so it is slow on normal days and still too short on slow days. Remove it and let the assertion wait, for example expect(page.get_by_text("Saved")).to_be_visible().
 
-Answer: wait_for_timeout(3000) is a fixed 3-second pause. It waits the full 3 seconds every time, whatever the page is doing. So it is both slow and still unreliable. They should remove it and let the assertion do the waiting, raising that assertion's timeout if the page really can take longer than 5 seconds.
+Why:
+- Slow: if the page is ready after 0.3 seconds, the test still waits 3. Across many tests, that is minutes per run.
+- Unreliable: if the page needs 4 seconds, 3 is not enough, and the test fails anyway. The pause only makes failures rarer and harder to reproduce.
 
-Why it is slow: on a normal day the page may be ready in half a second, and the pause still waits 3. Across many tests and many runs, that adds up to minutes.
+The assertion moves on the moment the result appears. If the page can really take longer than 5 seconds, give that assertion more time: to_be_visible(timeout=10_000).
 
-Why it is still unreliable: on a really slow day the page may need 4 seconds. 3 seconds is not enough, and the test fails anyway. The pause only made the failure rarer and harder to reproduce.
+Any expect assertion does the waiting. Use the one that matches what you are checking: to_be_visible for an element appearing, to_have_text for a text.
 
-What to write instead:
+Common mistakes:
+- Making the pause longer "to be safe". Every run gets slower, and it still guarantees nothing.
+- Thinking a Playwright function must be fine for tests. wait_for_timeout exists for watching a test while debugging.
 
-```python
-expect(page.get_by_text("Saved")).to_be_visible()                  # waits up to 5 s, only as long as needed
-expect(page.get_by_text("Saved")).to_be_visible(timeout=10_000)    # if it can really take longer
-```
-
-Common wrong answers:
-- "Nothing is wrong, it is a Playwright function, so it must be fine." It exists for watching a test while debugging, not for real tests.
-- "Make it 10 seconds to be safe." That makes every run 10 seconds slower and still does not guarantee anything.
-
-See: WAITING FOR OTHER THINGS, WHY NOT TIME.SLEEP(), and Trap 3.
+See: WHY NOT TIME.SLEEP(), and Trap 3.
 
 
-8. DevOps stretch question: tests pass on your Mac but sometimes time out on CI. Someone suggests setting every timeout to 60 seconds. Is that a good idea?
+8. Because it hides the cause and makes every real failure take a minute to report. Instead, find which step times out and why, fix it, and raise the timeout only for a step that is really slow.
 
-Answer: usually not. It may make some failures go away, but it hides the real cause and makes every genuine failure take a minute to report. First find out why CI is slower or different, then raise only the timeouts that really need it.
+Why it is a poor first fix:
+- A broken locator now fails after 60 seconds instead of 5. With a few broken tests, a run takes minutes longer before you learn anything.
+- Pages that have become much slower still pass, so performance problems go unnoticed.
+- The usual cause of "sometimes times out on CI" is a timing bug in the test: a reading call used as a check, or a fixed pause. Those read once and ignore the timeout, so a bigger timeout does not fix them.
 
-Why it is a bad default:
-- A broken locator now fails after 60 seconds instead of 5. With several broken tests, a CI run can take many minutes longer before you learn anything.
-- Real performance problems disappear: a page that got ten times slower still passes.
-- The cause is often not slowness at all, but a timing bug in the test, such as a plain assert on inner_text() or count(). A longer timeout does not fix those, because they do not wait at all.
+What to do:
+1. Read the error: which step timed out, and on which locator. Traces (Module 04) record what the page looked like at every step, even on CI.
+2. Replace reading calls used as checks with expect, and remove fixed pauses.
+3. If one step really is slow on CI, raise the timeout for that step only.
+4. CI machines are often slower than a laptop, so a modest global increase (for example 10 seconds for expect) can be reasonable, after investigating.
 
-What to do instead:
-- Look at which step times out, and the error message. Module 04 shows traces, which record exactly what the page looked like at each step.
-- Check for reading calls used as checks (Trap 1, Trap 6) and fixed pauses (Trap 3).
-- If one step is really slow on CI, raise the timeout for that step.
-- CI machines are often slower and run several things at once, so a modest global increase (for example 10 seconds for expect) can be reasonable. That is a decision to make after investigating, not a first fix.
+Common mistakes:
+- Answering only "no". The useful part is why, and what to do instead.
 
 See: TIMEOUTS, Trap 4, and Module 09 for CI.
 
 
 End of Module 03. Next up: Module 04, debugging (the Inspector, codegen, traces and the Trace Viewer, screenshots and videos).
+
+
