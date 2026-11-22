@@ -95,6 +95,52 @@ pw-learn/
 
 Kept out of Git by .gitignore: .venv/, pw_learn.egg-info/ (created by the editable install), test-results/ (screenshots, videos and traces), playwright-report/, saved login state, and .env files.
 
+INSTALLING THE PACKAGE
+
+The repo is also an installable Python package called pw_learn. pyproject.toml describes it, and the code lives in src/pw_learn/. There are three ways to install it.
+
+1. Editable, for working on the course (the normal way):
+
+```
+pip install -e .
+```
+
+- Run it from the repo root, with the venv active. The dot means "the package in this folder".
+- -e (editable) means Python reads the files straight from src/, so a change to a page object takes effect immediately, with no reinstall.
+- pip install -r requirements.txt does this too, because its last line is -e .
+
+2. A normal, fixed copy, from the repo folder:
+
+```
+pip install .
+```
+
+Python gets a copy of the package as it is now. Later changes to src/ are not picked up until you install again. Useful when you only want to use the page objects, not change them.
+
+3. Straight from GitHub, into another project, without cloning:
+
+```
+pip install "git+https://github.com/<your-username>/pw-learn.git"
+```
+
+- pip downloads the repo and installs the pw_learn package.
+- Add @main or a tag name at the end to choose a version: "git+https://github.com/<your-username>/pw-learn.git@main"
+- For a private repo, this needs access to it. Over SSH: pip install "git+ssh://git@github.com/<your-username>/pw-learn.git"
+
+What gets installed: only the pw_learn package (src/pw_learn/, the page objects and helpers). The tests, docs and settings files stay in the repo.
+
+Playwright itself is not installed by the package, because pyproject.toml does not list any dependencies. Install it separately (pip install pytest-playwright, then playwright install chromium), or use requirements.txt.
+
+Check the package is installed:
+
+```
+python -c "import pw_learn.pages; print('import OK')"
+pip show pw-learn
+```
+
+pip show prints the package's name, version and location. To remove it: pip uninstall pw-learn
+
+
 
 NAMING
 
