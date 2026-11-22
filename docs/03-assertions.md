@@ -192,7 +192,7 @@ expect.set_options(timeout=10_000)       # all expect assertions
 page.set_default_timeout(10_000)          # all actions on this page
 ```
 
-Module 05 shows where to put settings like these so they apply to every test.
+Module 06 shows where to put settings like these so they apply to every test.
 
 Raise a timeout for the one step that needs it. Raising every timeout makes real failures take much longer to show up, and can hide performance problems.
 
@@ -226,7 +226,7 @@ page.wait_for_timeout(3000)          # a fixed 3-second pause
 
 wait_for_timeout is a fixed pause, like time.sleep (next section). It is meant for watching a test while debugging, not for real tests.
 
-Waiting for a network response, such as an API call finishing, is covered in Module 07.
+Waiting for a network response, such as an API call finishing, is covered in Module 08.
 
 
 WHY NOT TIME.SLEEP()
@@ -590,7 +590,7 @@ What to do:
 Common mistakes:
 - Answering only "no". The useful part is why, and what to do instead.
 
-See: TIMEOUTS, Trap 4, and Module 09 for CI.
+See: TIMEOUTS, Trap 4, and Module 10 for CI.
 
 
 End of Module 03. Next up: Module 04, debugging (the Inspector, codegen, traces and the Trace Viewer, screenshots and videos).

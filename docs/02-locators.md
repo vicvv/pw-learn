@@ -399,7 +399,7 @@ THE FILES
 What each part does:
 
 open_with_items(page)
-  A plain helper function (not a test, because its name does not start with test_). It opens the app and adds the three ITEMS by filling the input and pressing Enter. Every test that needs items calls it itself, because each test gets a fresh page (Module 01, Trap 5).
+  A plain helper function (not a test, because its name does not start with test_). It opens the app and adds the three ITEMS by filling the input and pressing Enter. Every test that needs items calls it itself, because each test gets a fresh page (Module 01, Trap 7).
 
 test_heading_by_role
   Finds the "todos" heading by role and name, and checks it is visible.
@@ -684,7 +684,7 @@ German:  <button data-testid="save-button">Speichern</button>
 ```
 
 The options:
-- Run the tests in one known language. Most apps follow the browser's language, and Playwright can set it with locale="en-US" when creating a browser context (Module 05 shows where). This is the simplest.
+- Run the tests in one known language. Most apps follow the browser's language, and Playwright can set it with locale="en-US" when creating a browser context (Module 06 shows where). This is the simplest.
 - Use get_by_test_id for elements whose text changes between languages, and keep get_by_role for everything else.
 - Load the expected texts from the same translation files the app uses, so the test looks for "Speichern" in German. More work, but it also checks that the translations exist.
 
@@ -692,7 +692,7 @@ Common mistakes:
 - Typing the German words into the tests by hand. Every language then needs its own copy of the tests, and every translation change breaks them.
 - Switching to CSS. That swaps one fragile kind of locator for another: CSS depends on page structure, so those tests break when the layout changes. If you need a locator that does not depend on language, get_by_test_id is the better choice.
 
-See: Trap 4, and Module 09 for CI.
+See: Trap 4, and Module 10 for CI.
 
 
 End of Module 02. Next up: Module 03, assertions and auto-waiting (how expect retries, timeouts, and why time.sleep() is never needed).
