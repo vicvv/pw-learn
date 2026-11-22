@@ -129,7 +129,7 @@ pip install "git+https://github.com/<your-username>/pw-learn.git"
 
 What gets installed: only the pw_learn package (src/pw_learn/, the page objects and helpers). The tests, docs and settings files stay in the repo.
 
-Playwright itself is not installed by the package, because pyproject.toml does not list any dependencies. Install it separately (pip install pytest-playwright, then playwright install chromium), or use requirements.txt.
+Installing the package also installs pytest-playwright (and with it pytest and Playwright), because pyproject.toml lists it as a dependency. The browsers are not included: run playwright install chromium once on every computer. For the exact versions the course was tested with, use pip install -r requirements.txt instead.
 
 Check the package is installed:
 

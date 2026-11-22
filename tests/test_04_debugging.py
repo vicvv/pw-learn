@@ -3,7 +3,7 @@
 Practice: Playwright's public TodoMVC demo, plus tiny local pages built
 with page.set_content().
 Run from the repo root with the venv active:
-    pytest FILES/test_04_debugging.py -v
+    pytest tests/test_04_debugging.py -v
 """
 from playwright.sync_api import Browser, Page, expect
 

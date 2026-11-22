@@ -3,7 +3,7 @@
 Practice: Playwright's public TodoMVC demo, plus tiny local pages built
 with page.set_content(), so the waiting can be shown on purpose.
 Run from the repo root with the venv active:
-    pytest FILES/test_03_assertions.py -v
+    pytest tests/test_03_assertions.py -v
 """
 import re
 

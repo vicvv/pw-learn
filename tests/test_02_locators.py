@@ -2,7 +2,7 @@
 
 Practice site: Playwright's public TodoMVC demo.
 Run from the repo root with the venv active:
-    pytest FILES/test_02_locators.py -v
+    pytest tests/test_02_locators.py -v
 """
 import re
 

@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "A hands-on course for learning Playwright with Python and pytest"
 readme = "README.md"
 requires-python = ">=3.10"
+dependencies = ["pytest-playwright"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
