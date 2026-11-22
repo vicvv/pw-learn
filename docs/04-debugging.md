@@ -629,4 +629,4 @@ Common mistakes:
 See: TRACES, and Module 10 for CI.
 
 
-End of Module 04. Next up: Module 05, complex interactions (iframes, new tabs and popups, file uploads and downloads, and browser dialogs).
+End of Module 04. Next up: Module 05, actions and input (typing, keys, clicks, hover, drag and drop, dropdowns and scrolling).
