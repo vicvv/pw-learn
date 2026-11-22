@@ -5,16 +5,16 @@ MODULES AT A GLANCE
 
 | #  | Topic                                   | Notes                                                | Code                                   |
 |----|-----------------------------------------|------------------------------------------------------|----------------------------------------|
-| 01 | Setup                                   | [01-setup.md](DOCS/01-setup.md)                      | `FILES/test_01_setup.py`               |
-| 02 | Locators                                | 02-locators.md                                       | `FILES/test_02_locators.py`            |
-| 03 | Assertions & auto-waiting               | 03-assertions.md                                     | `FILES/test_03_assertions.py`          |
-| 04 | Debugging (Inspector, trace viewer)      | 04-debugging.md                                      | `FILES/test_04_debugging.py`           |
-| 05 | Fixtures & Page Object Model            | 05-fixtures-pom.md                                   | `FILES/test_05_fixtures_pom.py`        |
-| 06 | Parallel runs & retries                 | 06-parallel-retries.md                               | `FILES/test_06_parallel_retries.py`    |
-| 07 | API testing & network mocking           | 07-api-mocking.md                                    | `FILES/test_07_api_mocking.py`         |
-| 08 | Authentication & storage state          | 08-auth-state.md                                     | `FILES/test_08_auth_state.py`          |
+| 01 | Setup                                   | [01-setup.md](docs/01-setup.md)                      | `tests/test_01_setup.py`               |
+| 02 | Locators                                | 02-locators.md                                       | `tests/test_02_locators.py`            |
+| 03 | Assertions & auto-waiting               | 03-assertions.md                                     | `tests/test_03_assertions.py`          |
+| 04 | Debugging (Inspector, trace viewer)      | 04-debugging.md                                      | `tests/test_04_debugging.py`           |
+| 05 | Fixtures & Page Object Model            | 05-fixtures-pom.md                                   | `tests/test_05_fixtures_pom.py`        |
+| 06 | Parallel runs & retries                 | 06-parallel-retries.md                               | `tests/test_06_parallel_retries.py`    |
+| 07 | API testing & network mocking           | 07-api-mocking.md                                    | `tests/test_07_api_mocking.py`         |
+| 08 | Authentication & storage state          | 08-auth-state.md                                     | `tests/test_08_auth_state.py`          |
 | 09 | CI/CD with GitHub Actions               | 09-ci-cd.md                                          | `.github/workflows/playwright.yml`     |
-| 10 | Visual & accessibility testing          | 10-visual-a11y.md                                    | `FILES/test_10_visual_a11y.py`         |
+| 10 | Visual & accessibility testing          | 10-visual-a11y.md                                    | `tests/test_10_visual_a11y.py`         |
 
 
 WHAT THIS IS
@@ -49,7 +49,7 @@ playwright install chromium
 pytest
 ```
 
-Behind a corporate network, playwright install may fail with a certificate error. See section 4 of DOCS/01-setup.md.
+Behind a corporate network, playwright install may fail with a certificate error. See section 4 of docs/01-setup.md.
 
 
 REPO LAYOUT
@@ -57,8 +57,8 @@ REPO LAYOUT
 ```
 pw-learn/
     README.md              this file
-    DOCS/                  notes for each module
-    FILES/                 tests (and later conftest.py and page objects)
+    docs/                  notes for each module
+    tests/                 tests (and later conftest.py and page objects)
     .github/workflows/     the GitHub Actions workflow (Module 09)
     pytest.ini             pytest settings
     requirements.txt       Python packages and versions
@@ -70,8 +70,8 @@ Kept out of Git by .gitignore: .venv/, test-results/, playwright-report/, saved 
 
 NAMING
 
-- Notes: DOCS/NN-topic.md, for example DOCS/02-locators.md
-- Tests: FILES/test_NN_topic.py, for example FILES/test_02_locators.py
+- Notes: docs/NN-topic.md, for example docs/02-locators.md
+- Tests: tests/test_NN_topic.py, for example tests/test_02_locators.py
 - NN is a two-digit module number, so files sort in order (01 to 10).
 - Test files start with test_ because pytest only collects files with that prefix. They use underscores because Python cannot import a file name with a dash.
 - Commit messages: "Module NN: topic"
@@ -82,53 +82,53 @@ Three files must keep their exact names because the tools look for them: README.
 THE MODULES
 
 Module 01 - Setup
-  Notes: DOCS/01-setup.md
-  Code:  FILES/test_01_setup.py
+  Notes: docs/01-setup.md
+  Code:  tests/test_01_setup.py
   Git repo and .gitignore, virtual environment, installing pytest-playwright and a browser, corporate certificate errors, pytest.ini, a first test, pushing to GitHub.
 
 Module 02 - Locators
-  Notes: DOCS/02-locators.md
-  Code:  FILES/test_02_locators.py
+  Notes: docs/02-locators.md
+  Code:  tests/test_02_locators.py
   get_by_role, get_by_label, get_by_text, get_by_test_id, filtering and chaining locators, and why CSS and XPath break more often.
 
 Module 03 - Assertions and auto-waiting
-  Notes: DOCS/03-assertions.md
-  Code:  FILES/test_03_assertions.py
+  Notes: docs/03-assertions.md
+  Code:  tests/test_03_assertions.py
   How actions wait automatically, expect() assertions that retry, timeouts, and why time.sleep() is never needed.
 
 Module 04 - Debugging
-  Notes: DOCS/04-debugging.md
-  Code:  FILES/test_04_debugging.py
+  Notes: docs/04-debugging.md
+  Code:  tests/test_04_debugging.py
   Headed and slow-motion runs, the Playwright Inspector, codegen, traces and the Trace Viewer, screenshots and videos.
 
 Module 05 - Fixtures and Page Object Model
-  Notes: DOCS/05-fixtures-pom.md
-  Code:  FILES/test_05_fixtures_pom.py, FILES/conftest.py, FILES/pages/
+  Notes: docs/05-fixtures-pom.md
+  Code:  tests/test_05_fixtures_pom.py, tests/conftest.py, tests/pages/
   Custom pytest fixtures, hooks for setup and teardown, and page objects that keep locators out of tests.
 
 Module 06 - Parallel runs and retries
-  Notes: DOCS/06-parallel-retries.md
-  Code:  FILES/test_06_parallel_retries.py
+  Notes: docs/06-parallel-retries.md
+  Code:  tests/test_06_parallel_retries.py
   Running tests in parallel with pytest-xdist, retries, finding and fixing flaky tests.
 
 Module 07 - API testing and network mocking
-  Notes: DOCS/07-api-mocking.md
-  Code:  FILES/test_07_api_mocking.py
+  Notes: docs/07-api-mocking.md
+  Code:  tests/test_07_api_mocking.py
   The request fixture for API tests, page.route() to mock or block network calls, and waiting for responses.
 
 Module 08 - Authentication and saved login state
-  Notes: DOCS/08-auth-state.md
-  Code:  FILES/test_08_auth_state.py
+  Notes: docs/08-auth-state.md
+  Code:  tests/test_08_auth_state.py
   Logging in once and reusing the saved state, credentials in environment variables, keeping auth files out of Git.
 
 Module 09 - CI/CD with GitHub Actions
-  Notes: DOCS/09-ci-cd.md
+  Notes: docs/09-ci-cd.md
   Code:  .github/workflows/playwright.yml
   Running tests on every push, installing browsers on Linux, repository secrets, sharding, saving reports and traces as artifacts.
 
 Module 10 - Visual and accessibility checks
-  Notes: DOCS/10-visual-a11y.md
-  Code:  FILES/test_10_visual_a11y.py
+  Notes: docs/10-visual-a11y.md
+  Code:  tests/test_10_visual_a11y.py
   Screenshot comparison, ARIA snapshots, and basic accessibility checks.
 
 

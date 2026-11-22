@@ -46,7 +46,7 @@ GitHub then shows a "Quick setup" page with commands. Ignore them: they are for 
 STEP 2 - CREATE THE PROJECT FOLDER AND LOCAL REPO
 
 ```
-mkdir -p ~/Documents/pw-learn/DOCS ~/Documents/pw-learn/FILES
+mkdir -p ~/Documents/pw-learn/docs ~/Documents/pw-learn/tests
 cd ~/Documents/pw-learn
 pwd
 git init -b main
@@ -87,7 +87,7 @@ Creating it first means .venv and other junk can never be committed by accident.
 
 STEP 4 - ADD YOUR PROJECT FILES
 
-Create the venv, install the packages, and add the files (README.md, pytest.ini, requirements.txt, DOCS/, FILES/). See DOCS/01-setup.md.
+Create the venv, install the packages, and add the files (README.md, pytest.ini, requirements.txt, docs/, tests/). See docs/01-setup.md.
 
 When a doc gives a file's contents, paste only the contents into the file in VS Code. Lines like cat > file << 'EOF' and EOF are terminal commands, never part of the file unless you want to create a file from the shell.
 
@@ -96,7 +96,7 @@ STEP 5 - THE FIRST COMMIT
 
 ```
 git status
-git add .gitignore README.md pytest.ini requirements.txt DOCS FILES
+git add .gitignore README.md pytest.ini requirements.txt docs tests
 git status
 git commit -m "Module 01: setup"
 git log --oneline
@@ -199,8 +199,8 @@ You have divergent branches and need to specify how to reconcile them
 error: cannot pull with rebase: You have unstaged changes
   Commit (or undo) your local changes first, then pull.
 
-Untracked files: FILES/
-  Those files were never added. Run git add FILES, then commit.
+Untracked files: tests/
+  Those files were never added. Run git add tests, then commit.
 
 
 WHY IT MATTERS / TRAPS (READ THIS PART!)
@@ -248,7 +248,7 @@ QUIZ (answers below - try before peeking)
 
 3. Why does the first push need -u, and the later ones do not?
 
-4. git status shows "Untracked files: FILES/". Is FILES/ in your last commit?
+4. git status shows "Untracked files: tests/". Is tests/ in your last commit?
 
 5. You created the GitHub repo with "Add a README" ticked, and the first push is rejected. What do you do?
 
@@ -263,7 +263,7 @@ ANSWERS
 
 3. -u links your local main to main on GitHub. Once the link exists, Git remembers it.
 
-4. No. Untracked means it was never added. Run git add FILES and commit it.
+4. No. Untracked means it was never added. Run git add tests and commit it.
 
 5. Run git pull origin main --allow-unrelated-histories, then git push. Or delete the GitHub repo and create it again, empty.
 

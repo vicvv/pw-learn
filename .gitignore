@@ -16,3 +16,8 @@ auth/
 # macOS
 .DS_Store
 restructure.sh
+
+# Python packaging
+*.egg-info/
+build/
+dist/

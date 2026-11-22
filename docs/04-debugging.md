@@ -37,9 +37,9 @@ Traces are the most useful of all. If you learn one tool from this module, learn
 WATCHING A TEST
 
 ```
-pytest FILES/test_04_debugging.py --headed
-pytest FILES/test_04_debugging.py --headed --slowmo 500
-pytest FILES/test_04_debugging.py --headed --browser-channel chrome
+pytest tests/test_04_debugging.py --headed
+pytest tests/test_04_debugging.py --headed --slowmo 500
+pytest tests/test_04_debugging.py --headed --browser-channel chrome
 ```
 
 - --headed shows the browser window. Tests are headless by default.
@@ -60,7 +60,7 @@ page.pause()
 Run that test headed:
 
 ```
-pytest FILES/test_04_debugging.py --headed -k todo_flow
+pytest tests/test_04_debugging.py --headed -k todo_flow
 ```
 
 The browser stops at that line and the Playwright Inspector opens. While paused you can look at the page, try locators, and continue step by step (next section). Click Resume to let the test continue.
@@ -73,7 +73,7 @@ PAUSING: PWDEBUG=1
 PWDEBUG=1 debugs a test without editing it:
 
 ```
-PWDEBUG=1 pytest -s FILES/test_04_debugging.py -k todo_flow
+PWDEBUG=1 pytest -s tests/test_04_debugging.py -k todo_flow
 ```
 
 - The browser opens headed, and the Inspector opens paused before the first action.
@@ -132,7 +132,7 @@ What to do with recorded code:
 - Copy the good locators and steps into your own test.
 - Add real assertions: recorded code mostly clicks and types, and a test without assertions proves very little.
 - Remove repeated or accidental steps.
-- Do not save recordings into FILES/ with a name starting with test_, or pytest will run them as tests.
+- Do not save recordings into tests/ with a name starting with test_, or pytest will run them as tests.
 
 
 SCREENSHOTS
@@ -292,7 +292,7 @@ A DEBUGGING ROUTINE
 
 THE FILES
 
-- FILES/test_04_debugging.py - 6 tests
+- tests/test_04_debugging.py - 6 tests
 
 add_todos(page, *items)
   A helper that opens the TodoMVC demo and adds any number of items. *items collects all the extra arguments into a tuple, so add_todos(page, "buy milk", "walk the dog") adds two items.
@@ -333,7 +333,7 @@ Traces, videos and screenshots are large, change on every run, and can contain d
 Trap 5 - Listening too late.
 page.on("console", ...) registered after the page has loaded misses everything printed while loading. Register listeners first, or wrap the action in a with page.expect_... block.
 
-Trap 6 - Saving codegen output as test_something.py in FILES/.
+Trap 6 - Saving codegen output as test_something.py in tests/.
 pytest collects it and runs it on every run. Recorded scripts usually have no assertions, so they pass whether or not the app works (a false negative).
 
 Trap 7 - Trusting a single screenshot.
@@ -348,7 +348,7 @@ HANDS-ON PRACTICE
 1. Run the Module 04 tests:
 
 ```
-pytest FILES/test_04_debugging.py -v
+pytest tests/test_04_debugging.py -v
 ```
 
    Expect 6 passed. A plain "pytest" now runs 23 tests: 2 from Module 01, 7 from Module 02, 8 from Module 03 and 6 from Module 04.
@@ -356,7 +356,7 @@ pytest FILES/test_04_debugging.py -v
 2. Step through a test with PWDEBUG:
 
 ```
-PWDEBUG=1 pytest -s FILES/test_04_debugging.py -k todo_flow
+PWDEBUG=1 pytest -s tests/test_04_debugging.py -k todo_flow
 ```
 
    The browser and the Inspector open, paused before the first action. Click Step over a few times and watch each action highlighted on the page. Type get_by_test_id("todo-item") in the locator box and see how many elements light up. Click Resume to finish.
@@ -364,7 +364,7 @@ PWDEBUG=1 pytest -s FILES/test_04_debugging.py -k todo_flow
 3. Record a trace of a passing test and open it:
 
 ```
-pytest FILES/test_04_debugging.py -k todo_flow --tracing on
+pytest tests/test_04_debugging.py -k todo_flow --tracing on
 ls test-results
 playwright show-trace test-results/<folder from ls>/trace.zip
 ```
@@ -383,15 +383,15 @@ test_console_message and test_page_error use local pages built with set_content(
 
 Break it on purpose (this step is MEANT to fail):
 
-1. In FILES/test_04_debugging.py, line 65, change
+1. In tests/test_04_debugging.py, line 65, change
    expect(page.get_by_test_id("todo-count")).to_have_text("1 item left")
    to
    expect(page.get_by_test_id("todo-count")).to_have_text("2 items left")
-   To confirm the line number: grep -n "1 item left" FILES/test_04_debugging.py
+   To confirm the line number: grep -n "1 item left" tests/test_04_debugging.py
 2. Run it with a trace, a screenshot and a video, kept only on failure:
 
 ```
-pytest FILES/test_04_debugging.py -k todo_flow --tracing retain-on-failure --screenshot only-on-failure --video retain-on-failure
+pytest tests/test_04_debugging.py -k todo_flow --tracing retain-on-failure --screenshot only-on-failure --video retain-on-failure
 ```
 
 3. The test fails after about 5 seconds: the counter says "1 item left", not "2 items left".
@@ -435,7 +435,7 @@ QUIZ (answers below - try before peeking)
 
 5. Module 03 said to check results with expect, but test_page_screenshot uses a plain assert shot.exists() (line 26). Why is that correct here?
 
-6. You record a session with playwright codegen --target python-pytest -o FILES/test_recorded.py and leave it there. pytest now runs it and it passes every time. What is the problem?
+6. You record a session with playwright codegen --target python-pytest -o tests/test_recorded.py and leave it there. pytest now runs it and it passes every time. What is the problem?
 
 7. Where do --screenshot, --video and --tracing save their files, and why must that folder stay out of Git?
 
@@ -468,7 +468,7 @@ Common mistakes:
 See: TRACES, and Trap 3.
 
 
-3. PWDEBUG=1 pytest -s FILES/test_04_debugging.py -k todo_flow
+3. PWDEBUG=1 pytest -s tests/test_04_debugging.py -k todo_flow
 
 Why: PWDEBUG=1 opens the browser headed and the Inspector paused before the first action, and switches off timeouts while you look around. Step over runs one action at a time. -k todo_flow selects the test, and -s lets the debugging output through.
 
@@ -505,11 +505,11 @@ Common mistakes:
 See: PLAIN ASSERT ON FILES IS FINE.
 
 
-6. It has no real assertions, so it passes whether or not the app works. That is a false negative. It also runs on every pytest run, because its name starts with test_ and it is in FILES/.
+6. It has no real assertions, so it passes whether or not the app works. That is a false negative. It also runs on every pytest run, because its name starts with test_ and it is in tests/.
 
 Why: codegen records what you did (clicks and typing), not what should be true afterwards. A test that clicks through the app and never checks a result can only fail if a click cannot find its element. If the app silently stops saving, the recording still passes. Recorded code also tends to contain repeated and accidental steps.
 
-What to do: use the recording as raw material. Copy the useful locators and steps into a proper test, add assertions on what the user should see, and delete the recording or save it outside FILES/ (or under a name that does not start with test_).
+What to do: use the recording as raw material. Copy the useful locators and steps into a proper test, add assertions on what the user should see, and delete the recording or save it outside tests/ (or under a name that does not start with test_).
 
 Common mistakes:
 - Thinking a recorded test is fine because it is green. A test that cannot fail for the right reason proves nothing.

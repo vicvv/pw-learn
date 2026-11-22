@@ -394,7 +394,7 @@ print(page.get_by_test_id("todo-item").count())
 
 THE FILES
 
-- FILES/test_02_locators.py - 7 tests on the TodoMVC demo
+- tests/test_02_locators.py - 7 tests on the TodoMVC demo
 
 What each part does:
 
@@ -466,7 +466,7 @@ HANDS-ON PRACTICE
 2. Run the Module 02 tests:
 
 ```
-pytest FILES/test_02_locators.py -v
+pytest tests/test_02_locators.py -v
 ```
 
    Expect 7 passed. A plain "pytest" now runs 9 tests: 2 from Module 01 and 7 from Module 02.
@@ -474,7 +474,7 @@ pytest FILES/test_02_locators.py -v
 3. Watch them:
 
 ```
-pytest FILES/test_02_locators.py --headed --slowmo 500
+pytest tests/test_02_locators.py --headed --slowmo 500
 ```
 
    You see each test open the app, add three items, and tick or filter them.
@@ -488,7 +488,7 @@ playwright codegen https://demo.playwright.dev/todomvc/
 5. Try page.pause(). Add page.pause() as the last line of test_filter_and_chain, then run:
 
 ```
-pytest FILES/test_02_locators.py --headed -k filter_and_chain
+pytest tests/test_02_locators.py --headed -k filter_and_chain
 ```
 
    In the Inspector, type get_by_test_id("todo-item") in the locator box: all three items light up. Then try get_by_test_id("todo-item").filter(has_text="walk"): only one does. Click Resume, then remove the page.pause() line.
@@ -505,15 +505,15 @@ If every test fails at its first step, open the site in your browser. If it does
 
 Break it on purpose (this step is MEANT to fail):
 
-1. In FILES/test_02_locators.py, line 41, change
+1. In tests/test_02_locators.py, line 41, change
    item = page.get_by_test_id("todo-item").filter(has_text="walk the dog")
    to
    item = page.get_by_test_id("todo-item")
-   To confirm the line number: grep -n 'has_text="walk the dog"' FILES/test_02_locators.py
+   To confirm the line number: grep -n 'has_text="walk the dog"' tests/test_02_locators.py
 2. Run:
 
 ```
-pytest FILES/test_02_locators.py -v -k filter_and_chain
+pytest tests/test_02_locators.py -v -k filter_and_chain
 ```
 
 3. The test fails with "strict mode violation" on line 42: the locator now matches all 3 items, so there are 3 checkboxes, and Playwright refuses to guess which one to check. Read the list of elements in the error: each one comes with a suggested locator.

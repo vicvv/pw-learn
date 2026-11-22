@@ -270,7 +270,7 @@ This is also a handy technique of its own: when you want to try out an assertion
 
 THE FILES
 
-- FILES/test_03_assertions.py - 8 tests
+- tests/test_03_assertions.py - 8 tests
 
 Helpers (not tests, because their names do not start with test_):
 
@@ -342,7 +342,7 @@ HANDS-ON PRACTICE
 1. Run the Module 03 tests:
 
 ```
-pytest FILES/test_03_assertions.py -v
+pytest tests/test_03_assertions.py -v
 ```
 
    Expect 8 passed. The run takes noticeably longer than Module 02, mostly because test_custom_timeout really waits about 6 seconds for "Done". A plain "pytest" now runs 17 tests: 2 from Module 01, 7 from Module 02 and 8 from Module 03.
@@ -350,7 +350,7 @@ pytest FILES/test_03_assertions.py -v
 2. Watch the waiting tests:
 
 ```
-pytest FILES/test_03_assertions.py --headed -k "waits or timeout"
+pytest tests/test_03_assertions.py --headed -k "waits or timeout"
 ```
 
    You see the Start button clicked, an empty page for a moment, then "Done" appear, and the test finishing right after. -k with "or" runs every test whose name contains either word.
@@ -358,7 +358,7 @@ pytest FILES/test_03_assertions.py --headed -k "waits or timeout"
 3. See how long each test took:
 
 ```
-pytest FILES/test_03_assertions.py --durations=0
+pytest tests/test_03_assertions.py --durations=0
 ```
 
    --durations=0 lists every test with its time, slowest first. test_custom_timeout takes about 6 seconds, test_expect_waits_for_text about 1.5 seconds. That shows expect waits only as long as needed.
@@ -375,15 +375,15 @@ The four waiting tests use local pages built with set_content(), so they work wi
 
 Break it on purpose (this step is MEANT to fail):
 
-1. In FILES/test_03_assertions.py, line 112, change
+1. In tests/test_03_assertions.py, line 112, change
    expect(page.get_by_test_id("result")).to_have_text("Done", timeout=10_000)
    to
    expect(page.get_by_test_id("result")).to_have_text("Done")
-   To confirm the line number: grep -n "timeout=10_000" FILES/test_03_assertions.py
+   To confirm the line number: grep -n "timeout=10_000" tests/test_03_assertions.py
 2. Run:
 
 ```
-pytest FILES/test_03_assertions.py -v -k custom_timeout
+pytest tests/test_03_assertions.py -v -k custom_timeout
 ```
 
 3. The test fails after about 5 seconds. "Done" would have appeared at 6 seconds, but the default timeout gave up first. Read the error: it shows the expected text "Done", the actual value (empty), and that it timed out after 5000 ms.
