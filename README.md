@@ -8,7 +8,7 @@ MODULES AT A GLANCE
 | 01 | Setup                                   | [01-setup.md](DOCS/01-setup.md)                      | `FILES/test_01_setup.py`               |
 | 02 | Locators                                | 02-locators.md                                       | `FILES/test_02_locators.py`            |
 | 03 | Assertions & auto-waiting               | 03-assertions.md                                     | `FILES/test_03_assertions.py`          |
-| 04 | Debugging (UI mode, trace viewer)       | 04-debugging.md                                      | `FILES/test_04_debugging.py`           |
+| 04 | Debugging (Inspector, trace viewer)      | 04-debugging.md                                      | `FILES/test_04_debugging.py`           |
 | 05 | Fixtures & Page Object Model            | 05-fixtures-pom.md                                   | `FILES/test_05_fixtures_pom.py`        |
 | 06 | Parallel runs & retries                 | 06-parallel-retries.md                               | `FILES/test_06_parallel_retries.py`    |
 | 07 | API testing & network mocking           | 07-api-mocking.md                                    | `FILES/test_07_api_mocking.py`         |
