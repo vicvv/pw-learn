@@ -15,3 +15,4 @@ auth/
 
 # macOS
 .DS_Store
+restructure.sh
