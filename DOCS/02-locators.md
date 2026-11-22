@@ -542,228 +542,157 @@ FOR YOUR OWN APP LATER
 
 QUIZ (answers below - try before peeking)
 
-1. Why does get_by_role("button", name="Save") usually survive a redesign better than page.locator("div.toolbar > button.btn-primary")?
+1. Why does get_by_role("button", name="Save") usually keep working after a redesign, when page.locator("div.toolbar > button.btn-primary") breaks?
 
-2. A test fails with "strict mode violation: ... resolved to 4 elements". What does it mean, and what is the better fix than adding .first?
+2. An action fails with "strict mode violation: ... resolved to 4 elements". What does that mean? When does exact=True fix it, and what fixes it when the 4 elements all have the same name?
 
-3. You write page.get_by_role("button", name="Log"). The page has "Login" and "Log out" buttons. What happens, and how do you fix it?
+3. The page has "Login" and "Log out" buttons. What happens when you run page.get_by_role("button", name="Log").click(), and what is the correct line?
 
-4. What does it mean that locators are lazy, and what problem does that prevent when the page redraws itself?
+4. In test_02_locators.py, line 18 creates new_todo once, and lines 20 and 21 use it for all three items, while the page redraws its list after every Enter. Why does new_todo keep working?
 
-5. What is wrong with assert page.get_by_test_id("todo-item").count() == 3?
+5. Why can assert page.get_by_test_id("todo-item").count() == 3 fail right after adding three items, and what should you write instead?
 
-6. In a table of users, how do you click the Delete button in the row for "Alice"?
+6. Every row in a users table has its own Delete button. Write the line that clicks the Delete button in the row for "Alice".
 
-7. A button shows only an X icon, but its HTML has aria-label="Close dialog". Which locator finds it by role?
+7. A button shows only an X icon, and its HTML has aria-label="Close dialog". Write the get_by_role locator that finds it.
 
-8. DevOps stretch question: CI runs the same tests against a staging build that is shown in German. Tests using get_by_role(..., name="Save") fail, but tests using get_by_test_id pass. Why, and what are your options? (Just guess.)
+8. DevOps stretch question: CI runs the tests against a build shown in German. Tests using get_by_role(..., name="Save") fail, but tests using get_by_test_id pass. Why, and what are your options? (Just guess.)
 
 
 ANSWERS
 
 
-1. Why does get_by_role("button", name="Save") usually survive a redesign better than page.locator("div.toolbar > button.btn-primary")?
+1. Because it depends on what the user sees (a button called Save), not on how the page is built. Developers change the page's structure often, but rarely change what users see.
 
-Answer: because it depends on what the user sees, not on how the page is built.
+Why: the CSS locator only works while all of these stay true: there is a div with the class toolbar, the button sits directly inside it (that is what > means), and the button has the class btn-primary. A renamed class, an extra wrapper div, or a toolbar moved into the header breaks it, although the button looks and works exactly the same. That failure tells you nothing about the app.
 
-Look at what each locator needs in order to keep working.
+The role locator needs only one thing: a button called Save. It fails only if the app really changes for users, for example the button is renamed or removed, and that is worth knowing.
 
-page.locator("div.toolbar > button.btn-primary") needs all of these to stay true:
-- there is a div with the class "toolbar"
-- the button sits directly inside it (that is what > means)
-- the button has the class "btn-primary"
+Common mistakes:
+- "It is more generic." Being generic is not the reason. get_by_role("button") with no name is very generic, and it would match every button on the page. What matters is what the locator depends on.
+- "It is faster." Both are fast. The difference is how often they break for no good reason.
 
-Developers change these things constantly, for reasons that have nothing to do with the button: a new design system renames btn-primary to btn-main, a wrapper div is added for spacing, the toolbar is moved into a header. After any of those, the button looks and works exactly the same for users, but the locator finds nothing and the test fails. That failure tells you nothing useful about the app.
-
-get_by_role("button", name="Save") needs only one thing: there is a button called Save. That only changes if the app really changes for users, for example the button is renamed to "Save changes" or removed. When this locator fails, it points at something a user would notice.
-
-Common wrong answers:
-- "Because get_by_role is faster." Speed is not the point. Both are fast. The difference is how often they break for no good reason.
-- "Because CSS cannot find buttons." It can. The problem is not that CSS fails to find the button today, it is that it depends on details that change tomorrow.
-
-See: WHY USER-FACING LOCATORS, and Trap 5 (copying long CSS from DevTools).
+See: WHY USER-FACING LOCATORS, and Trap 5.
 
 
-2. A test fails with "strict mode violation: ... resolved to 4 elements". What does it mean, and what is the better fix than adding .first?
+2. One locator matched 4 elements, and an action needs exactly one, so Playwright stopped instead of guessing. exact=True fixes it only when the 4 elements have different names that partly match your text. When the names are identical, narrow the locator by its container, with filter() or chaining.
 
-Answer: the locator matched 4 elements, but the action needs exactly one, so Playwright stopped instead of guessing. The better fix is to narrow the locator so it describes the one element you mean.
+Why: actions such as click() and check() act on one element. With 4 matches, any choice would be a guess, and a wrong guess makes the test do the wrong thing without any error.
 
-Why Playwright stops: actions such as click(), fill() and check() act on one element. With 4 matches, any choice would be a guess, and a wrong guess makes the test do the wrong thing silently. Picture 4 Delete buttons in a list: clicking "the first one" might delete the wrong item, and the test could still pass.
+Case A, different names: name="Save" matches "Save", "Save draft", "Save as" and "Autosave", because matching is partial. name="Save", exact=True matches only "Save".
 
-Why .first is usually the wrong fix: it makes the error disappear, but it does not make the locator correct. It says "whichever one happens to be first", so:
-- if the order changes, the test acts on a different element
-- if the element you wanted was never first, the test was wrong from the start, and now nothing tells you
-
-The better fixes say which element you mean:
+Case B, identical names: every row has a button named exactly "Delete". exact=True changes nothing, there are still 4 matches. Say which row you mean:
 
 ```python
-# filter by text inside it
-page.get_by_test_id("todo-item").filter(has_text="walk the dog")
-
-# filter by something it contains
-page.get_by_role("listitem").filter(has=page.get_by_role("checkbox", checked=True))
-
-# search inside a container
 page.get_by_role("row").filter(has_text="Alice").get_by_role("button", name="Delete")
-
-# require the exact name
-page.get_by_role("button", name="Save", exact=True)
 ```
 
-Tip: the error message lists all 4 elements with a suggested locator for each. That list often shows the difference between them, which tells you what to filter on.
+The error message lists each matching element with a suggested locator. Compare them: if the names differ, use exact=True. If they are the same, use filter() or a chain.
 
-When .first is fine: when position really is what you are testing, for example "the newest item appears at the top".
+You saw case B in the break-it-on-purpose step: without the filter on line 41, the locator matched all 3 items, so check() on line 42 found 3 checkboxes.
 
-See: STRICTNESS, FILTER, CHAIN, and Trap 2.
+Common mistakes:
+- Reading the error as "4 identical locators". It is one locator that matched 4 elements on the page.
+- Adding .first. The error goes away, but the test acts on whichever element comes first, which may be the wrong one.
+- Using exact=True when the names are identical. It cannot tell identical names apart.
+
+See: STRICTNESS, FILTER, CHAIN, Trap 1 and Trap 2.
 
 
-3. You write page.get_by_role("button", name="Log"). The page has "Login" and "Log out" buttons. What happens, and how do you fix it?
+3. Both buttons match, so click() fails with "strict mode violation ... resolved to 2 elements". The correct line is page.get_by_role("button", name="Login", exact=True).click()
 
-Answer: both buttons match, so an action on this locator fails with a strict mode violation. Fix it by giving the full name with exact=True.
+Why: name= matches part of the name and ignores upper and lower case by default, so "Log" is found in both "Login" and "Log out". Playwright does not click the first one. It stops.
 
-Why both match: name= matches part of the accessible name by default, and ignores upper and lower case. "Log" is part of "Login" and part of "Log out", so the locator resolves to 2 elements. A click() then stops with "strict mode violation ... resolved to 2 elements".
+exact=True requires the whole name to match, with the same case. That is why it needs the full name too.
 
-The fix:
-
-```python
-page.get_by_role("button", name="Login", exact=True)
-page.get_by_role("button", name="Log out", exact=True)
-```
-
-exact=True means the whole name must match, with the same case. "Login" no longer matches "Log out", and the other way round.
-
-Common wrong answers:
-- "It clicks the first one." It does not. Playwright never guesses for an action, it stops.
-- "It finds nothing, because neither button is called exactly Log." Matching is partial by default, so both are found.
-- "Use .first." That would click whichever button happens to come first, which may be the wrong one (see question 2).
-
-Partial matching is useful most of the time, because it tolerates small changes such as extra spaces or a trailing icon label. Switch to exact=True for short or common words such as Log, Save, OK, Edit, Delete, where partial matching easily finds more than one element.
+Common mistakes:
+- Adding only exact=True: name="Log", exact=True matches nothing, because no button is named exactly "Log". The click then waits and fails with a timeout.
+- Writing exact="True" with quotes. That is a piece of text, not Python's True value. It may seem to work, because Python treats any non-empty text as true, but exact="False" would count as true too. Write True and False without quotes.
+- Curly quotes (" "), which come from apps such as TextEdit, Notes or chat. Python only accepts straight quotes and stops with a SyntaxError. Type code in VS Code.
 
 See: NAME AND TEXT MATCHING, and Trap 1.
 
 
-4. What does it mean that locators are lazy, and what problem does that prevent when the page redraws itself?
+4. Because a locator is a description, not the element itself. Every time new_todo is used, Playwright searches the page again and finds the input field that is there at that moment.
 
-Answer: creating a locator does not search the page. It only stores a description. The search happens each time you act on it or assert on it. That means the locator always finds the element that is on the page right now, so it never points at an element that has disappeared.
+Why: line 18 does not search the page at all. It only stores "the field with the placeholder What needs to be done?". The search happens on lines 20 and 21, each time they run.
 
-What happens step by step:
+When the app redraws, it can throw away an element and put an identical-looking new one in its place. Anything holding on to the old element would now point at something that no longer exists (a "stale" element). A locator holds no element, only the description, so it simply finds the new one.
 
-```python
-new_todo = page.get_by_placeholder("What needs to be done?")   # 1. only a description, no search
-new_todo.fill("buy milk")                                        # 2. search now, then fill
-new_todo.press("Enter")                                          # 3. search again, then press
-```
+In practice: you can create a locator once, at the top of a test, and keep using it through any number of page changes.
 
-The problem it prevents: modern web apps redraw parts of the page constantly. When you add a to-do item, the app may remove the whole list and draw a new one. If a tool remembered the exact element it found in step 1, that element would be gone after the redraw. It would be "stale": it no longer exists, even though an identical-looking element is now in its place. Using it would fail.
-
-A lazy locator has no such problem: at step 3 it searches again and finds the new element.
-
-Common wrong answers:
-- "Lazy means it waits a long time." Waiting is a separate feature (Module 03). Lazy means it searches when used, not when created.
-- "Lazy means it caches the element to be faster." It is the opposite. It does not keep the element at all, which is exactly why it never goes stale.
-
-Practical result: you can store a locator in a variable at the top of a test and use it all the way through, even after many page changes.
+Common mistakes:
+- "Lazy means it waits." Waiting is a separate feature (Module 03). Lazy means it searches when used, not when created.
+- "It remembers the element to be faster." It is the opposite: it remembers nothing but the description, which is why it never goes stale.
 
 See: LOCATORS ARE LAZY.
 
 
-5. What is wrong with assert page.get_by_test_id("todo-item").count() == 3?
+5. count() checks the page once, immediately. If the third item has not appeared yet, it returns 2 and the assert fails, although the app works. Write expect(page.get_by_test_id("todo-item")).to_have_count(3), which keeps checking until the count is 3 or 5 seconds pass.
 
-Answer: count() checks once, at that exact moment, without waiting. If the items are not all on the page yet, it returns a smaller number and the test fails, even though the app is fine. The test is flaky: it passes or fails depending on timing. Use expect(...).to_have_count(3), which waits and retries.
+Why: the app may still be drawing the third item when the assert runs. A plain assert never looks again. expect does: it sees 2, waits a moment, checks again, and passes as soon as it sees 3.
 
-What happens with each version, right after adding three items:
+On a fast Mac the plain assert may pass every time, which makes it dangerous: it then fails on a slower CI machine, or one run in ten. That is a flaky test.
 
-```python
-assert page.get_by_test_id("todo-item").count() == 3
-```
-The app may still be drawing the third item. count() returns 2, the assert fails at once, and nothing is retried.
-
-```python
-expect(page.get_by_test_id("todo-item")).to_have_count(3)
-```
-If the count is 2, expect checks again, and again, until it is 3 or the timeout (5 seconds by default) runs out. As soon as the third item appears, the assertion passes.
-
-On your fast Mac the plain assert may pass every time, which is what makes it dangerous: it then fails on a slower CI machine, or one day in ten, and nobody can reproduce it.
-
-Common wrong answers:
-- "Nothing is wrong, count() returns the right number." It returns the number at that instant, which is not always the final number.
-- "Add time.sleep(1) before it." That makes the test slower, and it can still be too short. expect waits exactly as long as needed and no longer.
-
-The same applies to any value you read yourself and then assert on: inner_text(), input_value(), is_visible(). Use the matching expect assertion instead (to_have_text, to_have_value, to_be_visible).
+Common mistakes:
+- Adding time.sleep(1) before the assert. Every run gets slower, and one second may still be too short.
 
 See: Trap 6, and Module 03.
 
 
-6. In a table of users, how do you click the Delete button in the row for "Alice"?
+6. page.get_by_role("row").filter(has_text="Alice").get_by_role("button", name="Delete").click()
 
-Answer: find the row first, then the button inside that row.
-
-```python
-page.get_by_role("row").filter(has_text="Alice").get_by_role("button", name="Delete").click()
-```
-
-Read it left to right:
-- page.get_by_role("row") - every row in the table
+Why: "Alice" is not on the button, it is in the row. So find the row first, then the button inside it:
+- get_by_role("row") - every row in the table
 - .filter(has_text="Alice") - only the row that contains "Alice"
 - .get_by_role("button", name="Delete") - the Delete button inside that row only
 - .click() - click it
 
-Common wrong answers:
-- page.get_by_role("button", name="Delete").click() - every row has a Delete button, so this matches all of them and fails with a strict mode violation.
-- page.get_by_role("button", name="Delete").first.click() - no error, but it deletes the first user, who may not be Alice. The test could pass while doing the wrong thing.
-- page.get_by_text("Alice").get_by_role("button", name="Delete") - get_by_text finds the cell that contains "Alice", and the button is not inside that cell, so this finds nothing.
-- page.get_by_role("button", name="Delete").nth(2) - depends on Alice being the third row. Add a user or change the sorting and it deletes someone else.
+This is the same pattern as lines 41 and 42 in the test file: filter the to-do items by "walk the dog", then tick the checkbox inside that item.
 
-Also watch the filter text. has_text matches part of the text, so "Alice" would also match a row for "Alice Johnson". If that is possible, filter on something unique, such as an email address, or use a regular expression.
+has_text matches part of the text, so "Alice" also matches "Alice Johnson". If that can happen, filter on something unique, such as an email address.
 
-This "container, then the thing inside it" pattern works for any repeated structure: table rows, list items, cards, menu entries.
+Common mistakes:
+- Putting "Alice" on the button: get_by_role("button", name="Alice") finds nothing, because every button just says Delete.
+- get_by_role("button", name="Delete").click() - matches every Delete button, so it fails with a strict mode violation.
+- Adding .first - no error, but it deletes the first user, who may not be Alice.
+- page.get_by_text("Alice").get_by_role("button", name="Delete") - get_by_text finds the cell that contains "Alice", and the button is in another cell of that row, so this finds nothing. Start from the row, which contains both.
 
 See: FILTER, CHAIN, and Trap 10.
 
 
-7. A button shows only an X icon, but its HTML has aria-label="Close dialog". Which locator finds it by role?
+7. page.get_by_role("button", name="Close dialog")
 
-Answer: page.get_by_role("button", name="Close dialog")
+Why: a button's accessible name comes from aria-label first. When a button has an aria-label, that is its name, and the visible X is not used for the name.
 
-Why: the accessible name, the name screen readers read out, comes from aria-label first. When a button has an aria-label, that label is its name, and the visible content (here the X) is not used for the name.
+To check any element's name without guessing: hover over it in codegen, or open Chrome DevTools: Inspect, then the Accessibility tab, then Name.
 
-Common wrong answers:
-- get_by_role("button", name="X") - X is what you see, but it is not the accessible name, so this finds nothing.
-- get_by_text("X") - may find the icon or nothing, and even if it finds something it is not a reliable way to identify the button.
-- get_by_label("Close dialog") - this is meant for form fields with labels. Use get_by_role("button", name=...) for buttons.
-
-How to check the name of any element without guessing:
-- Codegen: hover over the element and it shows the locator it would use, including the name.
-- Chrome DevTools: right-click -> Inspect -> Accessibility tab -> "Name".
-
-This is also why the aria-label matters for users: without it, a screen reader would read the button as just "button" (or "X"), and a blind user would not know what it does.
+Common mistakes:
+- name="X" - X is what you see, but it is not the accessible name, so nothing matches.
+- get_by_label("Close dialog") - get_by_label is for form fields with a label. For buttons, use get_by_role with name=.
 
 See: THE ACCESSIBLE NAME.
 
 
-8. DevOps stretch question: CI runs the same tests against a staging build that is shown in German. Tests using get_by_role(..., name="Save") fail, but tests using get_by_test_id pass. Why, and what are your options?
+8. The accessible name is translated, so name="Save" finds nothing when the button says "Speichern". data-testid attributes are never translated, so those locators still match. Options: run the tests in one known language, use get_by_test_id for elements whose text changes, or load the expected texts from the app's translation files.
 
-Answer: the accessible name is translated, so text-based locators look for "Save" while the page says "Speichern". data-testid attributes are not translated, so those locators still match.
-
-Why: name= matches the text users see. Translating the app changes exactly that text. data-testid is an attribute in the HTML that users never see, so translators never touch it.
+Why: name= matches the text users see, and translation changes exactly that text. data-testid is an attribute users never see:
 
 ```
 English: <button data-testid="save-button">Save</button>
 German:  <button data-testid="save-button">Speichern</button>
 ```
 
-get_by_role("button", name="Save") finds the English button only. get_by_test_id("save-button") finds both.
-
-Options:
-- Run the UI tests in one known language. Most apps let you choose the language with a setting or a browser option, and Playwright can set the browser's language: browser.new_context(locale="en-US"). This is the simplest option.
+The options:
+- Run the tests in one known language. Most apps follow the browser's language, and Playwright can set it with locale="en-US" when creating a browser context (Module 05 shows where). This is the simplest.
 - Use get_by_test_id for elements whose text changes between languages, and keep get_by_role for everything else.
-- Load the expected texts from the same translation files the app uses, so the test looks for "Speichern" when the app runs in German. More work, but it also checks that translations exist.
+- Load the expected texts from the same translation files the app uses, so the test looks for "Speichern" in German. More work, but it also checks that the translations exist.
 
-Common wrong answers:
-- "Switch every locator to CSS." That gives up the advantages of user-facing locators for all tests, to solve a problem that only affects text.
-- "The German build is broken." The build is fine. The tests assumed one language.
+Common mistakes:
+- Typing the German words into the tests by hand. Every language then needs its own copy of the tests, and every translation change breaks them.
+- Switching to CSS. That swaps one fragile kind of locator for another: CSS depends on page structure, so those tests break when the layout changes. If you need a locator that does not depend on language, get_by_test_id is the better choice.
 
-See: Trap 4 (text that changes), and Module 09 for CI.
+See: Trap 4, and Module 09 for CI.
 
 
 End of Module 02. Next up: Module 03, assertions and auto-waiting (how expect retries, timeouts, and why time.sleep() is never needed).
