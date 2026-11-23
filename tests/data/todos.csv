@@ -1,0 +1,6 @@
+case,items,complete,expected_left
+one-item-none-done,milk,,1 item left
+two-items-one-done,milk|eggs,milk,1 item left
+three-items-two-done,milk|eggs|bread,milk|bread,1 item left
+three-items-none-done,milk|eggs|bread,,3 items left
+all-done,milk|eggs,milk|eggs,0 items left

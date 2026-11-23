@@ -3,10 +3,16 @@
 pytest finds this file by its name and makes every fixture in it available
 to every test in this folder, with no import needed.
 """
+from pathlib import Path
+
 import pytest
 from playwright.sync_api import Page
 
+from pw_learn import settings
 from pw_learn.pages import TodoPage
+
+# Read the repo's .env file, if there is one, before any test runs.
+settings.load_env_file(Path(__file__).parent.parent / ".env")
 
 
 @pytest.fixture(scope="session")

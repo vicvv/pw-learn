@@ -1,0 +1,23 @@
+[
+  {
+    "id": "active-hides-completed",
+    "items": ["milk", "eggs", "bread"],
+    "complete": ["eggs"],
+    "filter": "Active",
+    "expected": ["milk", "bread"]
+  },
+  {
+    "id": "completed-shows-only-done",
+    "items": ["milk", "eggs", "bread"],
+    "complete": ["milk", "bread"],
+    "filter": "Completed",
+    "expected": ["milk", "bread"]
+  },
+  {
+    "id": "all-shows-everything",
+    "items": ["milk", "eggs"],
+    "complete": ["milk"],
+    "filter": "All",
+    "expected": ["milk", "eggs"]
+  }
+]
