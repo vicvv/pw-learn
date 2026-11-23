@@ -169,26 +169,91 @@ THE PLAYWRIGHT INSPECTOR
 
 The Inspector is the window that opens with page.pause(), PWDEBUG=1 and codegen.
 
-- Resume (play button): run until the end, or until the next page.pause().
-- Step over: run only the next action, then stop again. The action about to run is highlighted on the page.
-- Locator box: type a locator, such as get_by_role("button", name="Clear completed"). Matching elements light up on the page, and the box shows how many matched.
-- Pick locator (target icon): click any element on the page to get the locator Playwright would use for it.
-- Log: each action, and what Playwright waited for before doing it.
 
-The locator box is the quickest way to fix a locator: try variations until exactly one element lights up, then copy it into the test.
+What appears on screen
+
+Two separate windows open:
+
+1. A Chromium browser window, showing a blank page at first.
+2. The Playwright Inspector: a narrower window with your test code and a row of buttons along the top.
+
+If you only see the browser, the Inspector is probably behind it or on another part of the screen. Check the Dock, or press Cmd+Tab (Alt+Tab on Windows) and look for a second window.
+
+
+The buttons along the top
+
+They are icons without labels. Hover over one to see its name. From left to right:
+
+- Resume (a play triangle) - run to the end of the test, or to the next page.pause().
+- Pause (two vertical bars) - pause a test that is running.
+- Step over (an arrow curving over a dot) - run only the next action, then stop again. This is the one for going through a test line by line.
+- Record (a circle) - start recording your clicks and typing as code.
+- Pick locator (a target or crosshair) - click any element on the page to get the locator Playwright would use for it.
+- Clear - clear the recorded code.
+
+Below the buttons:
+
+- Locator box - type a locator, such as get_by_role("button", name="Clear completed"). Matching elements light up on the page, and the box shows how many matched. This is the quickest way to fix a locator: try variations until exactly one element lights up, then copy it into the test.
+- Your test code, with the line about to run highlighted. The same action is also highlighted on the page.
+- Log - each action, and what Playwright waited for before doing it.
+
+
+Using it
+
+1. Start the test with PWDEBUG=1 (previous section) or page.pause().
+2. Click Step over once for each action, and watch the page change.
+3. At any point, type a locator in the locator box to see what it matches right now.
+4. Click Resume to run the rest of the test, or close the browser window to stop.
+
+
+If the Inspector does not open
+
+Check that the variable reached pytest:
+
+```
+echo $PWDEBUG
+```
+
+If it prints nothing, the usual causes are:
+
+- PWDEBUG=1 was typed on a separate line. It has to be on the same line, in front of pytest.
+- You are using PowerShell on Windows, where that form does not work. Set it first with $env:PWDEBUG = "1", then run pytest, then Remove-Item Env:PWDEBUG when you are done.
+- The -s option is missing, so pytest captures the output. Add -s.
+
+If the test runs to the end without stopping, there is no page.pause() in it and PWDEBUG was not set, so nothing paused it.
 
 
 PAUSING IN PYTHON: BREAKPOINT()
 
-Python's own debugger works too:
+Python's own debugger is an alternative that works in the terminal, with no extra window.
+
+Add this line in the test, where you want to stop:
 
 ```python
 breakpoint()
 ```
 
-The test stops at that line and the terminal shows a (Pdb) prompt. With --headed, the browser stays open, so you can look at it. In the prompt you can run Python, for example page.url or page.get_by_test_id("todo-item").count(). Type c and press Enter to continue.
+Run the test headed, so you can see the page:
+
+```
+pytest -s tests/test_04_debugging.py -k todo_flow --headed
+```
+
+The test stops at that line and the terminal shows a (Pdb) prompt. There you can type:
+
+- n then Enter - run the next line (the same idea as Step over)
+- c then Enter - continue to the end
+- any Python, to look at things: page.url, or page.get_by_test_id("todo-item").count()
+- q then Enter - quit the test
+
+-s is needed, otherwise pytest captures the output and you never see the prompt.
+
+Remove the breakpoint() line when you are done. A forgotten one makes the test wait forever, and on CI the job runs until it times out.
 
 Breakpoints set in VS Code with the Python extension work the same way, if you run the test from VS Code's Testing panel.
+
+Which to use: the Inspector is better for locators, because it highlights matches on the page as you type. breakpoint() is better for inspecting Python values.
+
 
 
 CODEGEN IN DEPTH
@@ -432,7 +497,7 @@ pytest tests/test_04_debugging.py --browser chromium --browser webkit -v
 PWDEBUG=1 pytest -s tests/test_04_debugging.py -k todo_flow
 ```
 
-   The browser and the Inspector open, paused before the first action. Click Step over a few times and watch each action highlighted on the page. Type get_by_test_id("todo-item") in the locator box and see how many elements light up. Click Resume to finish.
+      Two windows open: a Chromium browser and the Playwright Inspector, paused before the first action. In the Inspector, click Step over (the third button, an arrow curving over a dot) a few times, and watch each action highlighted on the page. Type get_by_test_id("todo-item") in the locator box and see how many elements light up. Click Resume (the play triangle) to finish. If you cannot see the Inspector, look behind the browser window or press Cmd+Tab.
 
 4. Record a trace of a passing test and open it:
 
