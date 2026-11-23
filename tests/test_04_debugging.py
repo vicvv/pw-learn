@@ -63,4 +63,5 @@ def test_todo_flow(page: Page):
     add_todos(page, "buy milk", "walk the dog")
     page.get_by_test_id("todo-item").filter(has_text="buy milk").get_by_role("checkbox").check()
     expect(page.get_by_test_id("todo-count")).to_have_text("1 item left")
+    #expect(page.get_by_test_id("todo-count")).to_have_text("2 item left")
     expect(page.get_by_test_id("todo-item")).to_have_count(2)
