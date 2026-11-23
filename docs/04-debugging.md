@@ -80,13 +80,13 @@ pytest --output evidence
 - These options can be combined in one command.
 
 
-Devices (a preview of Module 06)
+Devices (a preview of Module 07)
 
 ```
 pytest --device "iPhone 13"
 ```
 
-Runs every test as if on that phone: screen size, touch, and the phone's browser identity. Module 06 covers device emulation properly.
+Runs every test as if on that phone: screen size, touch, and the phone's browser identity. Module 07 covers device emulation properly.
 
 
 Useful pytest options
@@ -149,12 +149,14 @@ PWDEBUG=1 debugs a test without editing it:
 PWDEBUG=1 pytest -s tests/test_04_debugging.py -k todo_flow
 ```
 
-- The browser opens headed, and the Inspector opens paused before the first action.
-- Timeouts are switched off while debugging, so nothing fails while you look around.
-- -s lets the Inspector and any print() output through.
-- PWDEBUG=1 at the start of the line sets an environment variable for that one command only.
+What each part does:
 
-On Windows (PowerShell):
+- PWDEBUG=1 opens the browser headed, opens the Inspector paused before the first action, and switches off timeouts while you look around. Written in front of the command, it applies to that one command only.
+- -s stops pytest capturing output, so the Inspector and any print() get through.
+- -k todo_flow runs only tests whose name contains that text.
+- tests/test_04_debugging.py limits the run to that file.
+
+On Windows (PowerShell), the Mac form does not work. Set the variable first, then clear it afterwards:
 
 ```
 $env:PWDEBUG = "1"
@@ -217,7 +219,7 @@ echo $PWDEBUG
 If it prints nothing, the usual causes are:
 
 - PWDEBUG=1 was typed on a separate line. It has to be on the same line, in front of pytest.
-- You are using PowerShell on Windows, where that form does not work. Set it first with $env:PWDEBUG = "1", then run pytest, then Remove-Item Env:PWDEBUG when you are done.
+- You are using PowerShell on Windows, where that form does not work. See the previous section.
 - The -s option is missing, so pytest captures the output. Add -s.
 
 If the test runs to the end without stopping, there is no page.pause() in it and PWDEBUG was not set, so nothing paused it.
@@ -255,7 +257,6 @@ Breakpoints set in VS Code with the Python extension work the same way, if you r
 Which to use: the Inspector is better for locators, because it highlights matches on the page as you type. breakpoint() is better for inspecting Python values.
 
 
-
 CODEGEN IN DEPTH
 
 Module 02 used codegen to find locators. More options:
@@ -269,7 +270,7 @@ playwright codegen --device "iPhone 13" https://demo.playwright.dev/todomvc/
 ```
 
 - --target python-pytest writes the code as a pytest test with the page fixture, the same style as these notes.
-- -o recorded.py also saves the code to a file when you close the browser. This saves it in the repo root, which is outside tests/.
+- -o recorded.py also saves the code to a file when you close the browser. It saves it in the repo root, which is outside tests/.
 - --viewport-size and --device record at a different window size, or as a phone.
 - The Inspector also has buttons to add assertions while recording (for example "assert visibility" and "assert text"): click the button, then the element.
 
@@ -289,7 +290,7 @@ page.screenshot(path="page.png", full_page=True)               # the whole page,
 page.get_by_test_id("todo-item").screenshot(path="item.png")   # one element only
 ```
 
-A screenshot shows one moment. Taken by --screenshot, it is the end of the test, not the step that went wrong.
+A screenshot shows one moment. Taken by --screenshot, that moment is the end of the test, not the step that went wrong.
 
 
 VIDEOS
@@ -308,7 +309,7 @@ A trace is a zip file with a complete record of a test:
 - network requests and responses
 - the test's source code, with the current line highlighted
 
-From the command line: --tracing retain-on-failure is the usual choice. A green run leaves nothing behind, and a red run leaves a full record of each failed test.
+From the command line, --tracing retain-on-failure is the usual choice. A green run leaves nothing behind, and a red run leaves a full record of each failed test.
 
 In code, for one block of steps (test_manual_trace does this):
 
@@ -334,7 +335,9 @@ Open a trace:
 playwright show-trace test-results/<test-folder>/trace.zip
 ```
 
-Or open https://trace.playwright.dev in a browser and drag the zip onto it. The page reads the file inside your browser and does not upload it.
+Find the exact folder name with ls test-results first, or type test-results/ and press Tab to complete it. The folder is named after the test, for example tests-test-04-debugging-py-test-todo-flow-chromium.
+
+You can also open https://trace.playwright.dev in a browser and drag the zip onto it. The page reads the file inside your browser and does not upload it, which is useful for a trace someone sends you from their CI run.
 
 What you see:
 
@@ -369,7 +372,7 @@ with page.expect_console_message() as message_info:
 assert message_info.value.text == "hello from the page"
 ```
 
-The with block starts listening first, then runs the code inside it, then waits until the message arrives. Starting to listen before the action matters: the message is printed while set_content is running, so listening afterwards would be too late.
+The with block starts listening first, then runs the code inside it, then waits until the message arrives. The order matters: a console message happens once and is not stored anywhere, so anything not already listening misses it.
 
 Traces record console messages and page errors too, in the Console and Errors tabs.
 
@@ -384,7 +387,7 @@ ls test-results
 
 - Each run clears test-results/ first, so old files do not pile up. Copy a trace somewhere else if you want to keep it.
 - --output other-folder saves them somewhere else.
-- test-results/ is in .gitignore (Module 01). Never commit these files: they are large, change on every run, and can show whatever was on the page.
+- test-results/ is in .gitignore (Module 01). Never commit these files: they are large, change on every run, and show whatever was on the page.
 
 Files saved by your own code, such as page.screenshot(path=...), go wherever the path says. The tests use tmp_path (a temporary folder pytest creates for each test), so nothing is left in the repo.
 
@@ -398,7 +401,7 @@ page.screenshot(path=shot, full_page=True)
 assert shot.exists()
 ```
 
-The same goes for any value that does not change after you read it: a file, a message that has already arrived, a number you calculated. Use expect for the page, and a plain assert for everything else.
+The same goes for any value that cannot change after you read it: a file, a message that has already arrived, a number you calculated. Use expect for the page, and a plain assert for everything else.
 
 
 A DEBUGGING ROUTINE
@@ -445,31 +448,34 @@ Trap 1 - Debugging without a trace.
 Rerunning a failing test again and again, adding prints, guessing. One run with --tracing retain-on-failure usually shows the reason in a minute.
 
 Trap 2 - Leaving page.pause() in a test.
-It needs a headed browser and someone to click Resume. Remove it before committing.
+It needs a headed browser and someone to click Resume. Remove it before committing. The same applies to breakpoint().
 
 Trap 3 - --tracing on for everyday runs.
 Every test then keeps a trace, which takes time and disk space and buries the one you need. Use retain-on-failure, and on only when you want a trace of a passing test.
 
 Trap 4 - Committing test-results/.
-Traces, videos and screenshots are large, change on every run, and can contain data from the page. Keep test-results/ in .gitignore.
+Traces, videos and screenshots are large, change on every run, and contain whatever the page showed. Keep test-results/ in .gitignore.
 
 Trap 5 - Listening too late.
 page.on("console", ...) registered after the page has loaded misses everything printed while loading. Register listeners first, or wrap the action in a with page.expect_... block.
 
 Trap 6 - Saving codegen output as test_something.py in tests/.
-pytest collects it and runs it on every run. Recorded scripts usually have no assertions, so they pass whether or not the app works (a false negative).
+pytest collects it and runs it on every run. Recorded scripts have no assertions, so they pass whether or not the app works.
 
 Trap 7 - Trusting a single screenshot.
 A screenshot shows the end of the test, not the step that went wrong. A trace shows every step.
 
 Trap 8 - Forgetting -s with PWDEBUG=1.
-Without -s, pytest captures output, which can get in the way of the debugging session.
+Without -s, pytest captures output, which gets in the way of the debugging session.
 
 Trap 9 - --browser for a browser that is not installed.
-pytest --browser webkit fails at once with "Executable doesn't exist" and the hint to run playwright install. Install each browser once: playwright install firefox webkit
+pytest --browser webkit fails at once with "Executable doesn't exist" and a hint to run playwright install. Install each browser once: playwright install firefox webkit
 
 Trap 10 - Leaving --slowmo or --headed in a CI command.
 --slowmo makes every action slower for no benefit, and a CI machine has no screen for --headed. Keep them for watching tests on your own computer.
+
+Trap 11 - A typo in -k runs nothing, quietly.
+pytest -k tody_flow does not fail. It reports "6 deselected" and runs no tests, which is easy to misread as a pass. Check the collected and deselected counts in the output.
 
 
 HANDS-ON PRACTICE
@@ -497,14 +503,19 @@ pytest tests/test_04_debugging.py --browser chromium --browser webkit -v
 PWDEBUG=1 pytest -s tests/test_04_debugging.py -k todo_flow
 ```
 
-      Two windows open: a Chromium browser and the Playwright Inspector, paused before the first action. In the Inspector, click Step over (the third button, an arrow curving over a dot) a few times, and watch each action highlighted on the page. Type get_by_test_id("todo-item") in the locator box and see how many elements light up. Click Resume (the play triangle) to finish. If you cannot see the Inspector, look behind the browser window or press Cmd+Tab.
+   Two windows open: a Chromium browser and the Playwright Inspector, paused before the first action. In the Inspector, click Step over (the third button, an arrow curving over a dot) a few times, and watch each action highlighted on the page. Type get_by_test_id("todo-item") in the locator box and see how many elements light up. Click Resume (the play triangle) to finish. If you cannot see the Inspector, look behind the browser window or press Cmd+Tab.
 
 4. Record a trace of a passing test and open it:
 
 ```
 pytest tests/test_04_debugging.py -k todo_flow --tracing on
 ls test-results
-playwright show-trace test-results/<folder from ls>/trace.zip
+```
+
+   ls prints the folder name, for example tests-test-04-debugging-py-test-todo-flow-chromium. Use that name in the next command (type test-results/ and press Tab to complete it):
+
+```
+playwright show-trace test-results/tests-test-04-debugging-py-test-todo-flow-chromium/trace.zip
 ```
 
    Click through the actions on the left, and switch between the Before and After tabs on the "check" step to see the item get ticked.
@@ -537,7 +548,7 @@ pytest tests/test_04_debugging.py -k todo_flow --tracing retain-on-failure --scr
 
 ```
 ls test-results/*
-playwright show-trace test-results/<folder from ls>/trace.zip
+playwright show-trace test-results/tests-test-04-debugging-py-test-todo-flow-chromium/trace.zip
 ```
 
    In the Trace Viewer, click the red step. The snapshot shows the counter with "1 item left", and the error shows the expected and the actual text. The folder also has the screenshot and the video.
@@ -556,7 +567,7 @@ MENTAL MODEL
 
 FOR YOUR OWN APP LATER
 
-- Make --tracing retain-on-failure part of every CI run (Module 10). A trace from a CI failure is often the only way to see what happened there.
+- Make --tracing retain-on-failure part of every CI run (Module 12). A trace from a CI failure is often the only way to see what happened there.
 - Run the browsers your users actually use. If most users are on Chrome and Safari, test chromium and webkit.
 - When a test fails only sometimes, keep the traces of a few failures and compare them. The difference between them is usually the cause.
 - Watch the Console and Errors tabs for crashes in the app's own scripts. Those are real bugs to report to the developers, with the trace attached.
@@ -565,17 +576,17 @@ FOR YOUR OWN APP LATER
 
 QUIZ (answers below - try before peeking)
 
-1. A test fails on CI with a timeout, and you cannot reproduce it on your Mac. Which pytest option records what happened, and which command opens the result?
+1. A test fails on CI with a timeout, and you cannot reproduce it on your own computer. Which pytest option records what happened, and which command opens the result?
 
 2. What is the difference between --tracing on and --tracing retain-on-failure, and which should a normal CI run use?
 
-3. You want to step through test_todo_flow one action at a time without editing the file. Which command do you run?
+3. You want to step through test_todo_flow one action at a time, without editing the file. Write the full command, and say what each part does.
 
-4. In test_console_message, why is page.set_content() (line 52) inside the with page.expect_console_message() block (line 51) instead of before it?
+4. In test_console_message, why is page.set_content() inside the with page.expect_console_message() block instead of on the line before it?
 
-5. Module 03 said to check results with expect, but test_page_screenshot uses a plain assert shot.exists() (line 26). Why is that correct here?
+5. Module 03 said to check results with expect, but test_page_screenshot uses a plain assert shot.exists(). Why is that correct here?
 
-6. You record a session with playwright codegen --target python-pytest -o tests/test_recorded.py and leave it there. pytest now runs it, and it passes every time. What is the problem?
+6. You record a session with playwright codegen --target python-pytest -o tests/test_recorded.py and leave the file there. pytest now runs it, and it passes every time. The app's Save button silently stops saving. Does the recorded test fail?
 
 7. Where do --screenshot, --video and --tracing save their files, and why must that folder stay out of Git?
 
@@ -587,111 +598,156 @@ QUIZ (answers below - try before peeking)
 ANSWERS
 
 
-1. --tracing retain-on-failure records a trace of every test and keeps it only if the test failed. Open it with playwright show-trace test-results/<test-folder>/trace.zip, or drag the zip onto https://trace.playwright.dev.
+1. --tracing retain-on-failure records the run, and playwright show-trace test-results/<test-folder>/trace.zip opens it.
 
-Why: a trace is a complete record of the run: every action, a snapshot of the page before and after each one, console messages, network requests and the test code. You can replay the CI failure step by step on your own machine, even though it never fails there. Click the red step and look at the Before snapshot: it usually shows the reason, such as a different text, a missing element, or a popup in the way.
+Why: a trace holds every action, a snapshot of the page before and after each one, console messages, network traffic and your test code. You can replay the CI failure on your own computer, step by step, even though it never fails there. Click the red step and look at the Before snapshot: the reason is usually visible straight away, such as a different text, a missing element or a popup covering a button.
+
+Find the folder name with ls test-results first, or type test-results/ and press Tab. You can also open https://trace.playwright.dev and drag the zip onto it, which is how you open a trace someone else sends you.
 
 Common mistakes:
-- Choosing --screenshot only-on-failure. A screenshot shows only the end of the test, not the step that went wrong or why.
-- Rerunning the test on your Mac until it fails. It may never fail there, and a passing rerun tells you nothing about CI.
+- Choosing --screenshot only-on-failure instead. A screenshot shows only the end of the test, not the step that went wrong or why.
+- Rerunning the test on your own computer until it fails. It may never fail there, and a passing rerun tells you nothing about CI.
+- Giving the command with <test-folder> left in. That is a placeholder, and the terminal reports "no such file or directory".
 
 See: TRACES, and THE TRACE VIEWER.
 
 
-2. on keeps a trace for every test. retain-on-failure records every test but keeps the trace only if the test failed. A normal CI run should use retain-on-failure.
+2. Both record every test. The difference is what is kept: on writes a trace for every test, retain-on-failure keeps the trace only for tests that failed. A normal CI run should use retain-on-failure.
 
-Why: with on, every passing test also leaves a trace, which costs time and disk space and buries the one trace you need. With retain-on-failure, a green run leaves nothing behind, and a red run leaves exactly the traces of the failed tests. Use on only when you want to study a passing test, as in hands-on step 4.
+Why: the recording runs the whole time, held in memory. At the end of the test, Playwright decides whether to write it to disk. With retain-on-failure, a passing test's recording is simply thrown away. That is why nothing is lost: by the time a test fails, everything that happened has already been recorded.
 
-The same pattern exists for videos (--video retain-on-failure) and screenshots (--screenshot only-on-failure).
+With on, a green run of 23 tests leaves 23 trace files, which costs time and disk space and buries the one trace you need. With retain-on-failure, a green run leaves nothing behind and a red run leaves exactly the traces of the failed tests. Use on only when you deliberately want a trace of a passing test, as in hands-on step 4.
+
+--video retain-on-failure and --screenshot only-on-failure work the same way.
 
 Common mistakes:
-- Thinking retain-on-failure starts recording only after the failure. It records the whole test from the start, then decides at the end whether to keep the trace.
+- Thinking retain-on-failure starts recording when the test fails. By then the actions have already happened, so there would be nothing to show.
 
 See: COMMAND-LINE OPTIONS, and Trap 3.
 
 
 3. PWDEBUG=1 pytest -s tests/test_04_debugging.py -k todo_flow
 
-Why: PWDEBUG=1 opens the browser headed and the Inspector paused before the first action, and switches off timeouts while you look around. Step over runs one action at a time. -k todo_flow selects the test, and -s lets the debugging output through.
+What each part does:
+- PWDEBUG=1 opens the browser headed, opens the Inspector paused before the first action, and switches off timeouts while you look around. Written in front of the command, it applies to that one command only.
+- pytest runs the tests.
+- -s stops pytest capturing output, so the Inspector and any print() get through.
+- tests/test_04_debugging.py limits the run to that file.
+- -k todo_flow runs only tests whose name contains that text.
 
-page.pause() would also work, but you would have to add it to the file and remember to remove it.
+Then click Step over (the third button in the Inspector) once per action.
+
+page.pause() would also work, but the question said without editing the file.
 
 Common mistakes:
-- pytest --headed --slowmo 500. That only slows the test down. You can watch, but you cannot stop it or try locators.
-- Writing PWDEBUG=1 on a line of its own. Written in front of the command, it applies to that command. On its own line, without export, pytest does not see it.
-- On Windows, the Mac form does not work. Use $env:PWDEBUG = "1" first.
+- Typing the filename as .pl instead of .py. pytest then reports "file or directory not found". Press Tab to complete filenames.
+- A typo in the test name, such as tody_flow. This one is quiet: -k does not fail on a name that matches nothing, so you get "6 deselected", no tests run, and it is easy to misread as a pass (Trap 11).
+- Leaving out -s, so the Inspector session is disturbed by pytest's output capture.
+- Using pytest --headed --slowmo 500 instead. That only slows the test down: you can watch, but you cannot stop it or try locators.
+- On Windows, using the Mac form. PowerShell needs $env:PWDEBUG = "1" on its own line first.
 
 See: PAUSING: PWDEBUG=1, and THE PLAYWRIGHT INSPECTOR.
 
 
-4. Because the message is printed while set_content() is running. The with block starts listening first, then runs set_content(), then waits for the message. If set_content() ran before the block, the message would already be gone, and the test would wait for one that never comes.
+4. Because the message is printed the moment set_content() runs. The with block starts listening first, then runs set_content(), then waits for the message. With set_content() on the line before, the message would already have come and gone, so the block would wait for an event that never happens, and fail after the timeout.
 
-Why: an event can only be caught by something that is already listening. The with page.expect_... pattern guarantees the order: listen, act, wait. If nothing arrives, it fails after the timeout with a clear error. test_page_error (lines 57 and 58) uses the same pattern for a script crash.
+Why: a console message is not stored anywhere. It happens once, and only something already listening receives it. The with page.expect_... pattern guarantees the order: listen, act, wait. test_page_error uses the same pattern for a script crash.
 
-The same applies to page.on("console", ...): register it before loading the page, or you miss messages printed while loading.
-
-Common mistakes:
-- Thinking the with block is just tidier code. The order is the point: listening has to start before the action that triggers the event.
-
-See: CONSOLE MESSAGES AND PAGE ERRORS, and Trap 5.
-
-
-5. Because shot.exists() checks a file, not the page. page.screenshot() returns only after the file has been written, so the file is already there when the assert runs, and it does not change afterwards.
-
-Why: the Module 03 rule exists because the page keeps changing: text arrives late, items appear after a moment, so a check that reads once can be too early. A file on disk does not change after the call that wrote it. expect is made for page elements and the page itself, and a plain assert is right for everything else: files, values that have already arrived, numbers you calculated.
-
-Line 53 is the same case: message_info.value.text is a message that has already arrived, so a plain assert is correct.
+The same applies to page.on("console", ...). Register it before the page loads, or you miss everything printed during loading (Trap 5).
 
 Common mistakes:
-- Concluding that plain asserts are always wrong. They are wrong for page state, and fine for values that cannot change anymore.
+- Thinking it is about making sure the content can be set. set_content() works the same either way. The point is timing.
+- Thinking the with block is just tidier code. The order is the whole reason.
+
+See: CONSOLE MESSAGES AND PAGE ERRORS.
+
+
+5. Because page.screenshot() only returns after the file has been written. By the time the next line runs, the file is definitely there, and a file does not change on its own afterwards, so checking once is enough.
+
+Why: the Module 03 rule exists because the page keeps changing. Text arrives late, items appear a moment after a click, so a check that reads once can be too early. That is why expect retries. A file on disk is the opposite: it is finished, and it stays finished.
+
+The rule:
+- expect for anything on the page: text, visibility, counts, values.
+- A plain assert for anything that cannot change after you read it: a file, a value already returned, a number you calculated.
+
+In the same test file, assert message_info.value.text == "hello from the page" is the second kind: the message has already arrived.
+
+Common mistakes:
+- Concluding that plain asserts are always wrong. They are wrong for page state, and right for finished values.
 
 See: PLAIN ASSERT ON FILES IS FINE.
 
 
-6. It has no real assertions, so it passes whether or not the app works (a false negative). It also runs on every pytest run, because its name starts with test_ and it is in tests/.
+6. No, it passes. That is a false negative: the test passes although the app is broken.
 
-Why: codegen records what you did (clicks and typing), not what should be true afterwards. A test that clicks through the app and never checks a result can only fail if a click cannot find its element. If the app silently stops saving, the recording still passes. Recorded code also tends to contain repeated and accidental steps.
+Why: codegen records your actions (clicks and typing), not your expectations. The recorded test clicks Save, the button is still on the page, so the click succeeds and the test ends. Nothing ever checks that anything was saved, so a broken save function cannot make it fail. The only way a recorded test fails is when a click cannot find its element.
 
-What to do: use the recording as raw material. Copy the useful locators and steps into a proper test, add assertions on what the user should see, then delete the recording or save it outside tests/ (codegen's -o recorded.py saves it in the repo root).
+A second problem: the file is in tests/ with a name starting with test_, so pytest collects it on every run. A test that can never fail for the right reason now sits in the suite, staying green and giving false confidence.
+
+What to do: treat the recording as raw material. Copy the useful locators and steps into a proper test, add assertions on what the user should see (a success message, a new row, a changed value), remove repeated steps, and delete the recording or keep it outside tests/.
 
 Common mistakes:
-- Thinking a recorded test is fine because it is green. A test that cannot fail for the right reason proves nothing.
+- Answering that the UI might change. True, but that is about maintenance. The question is whether this test can detect a broken app, and it cannot.
 
 See: CODEGEN IN DEPTH, and Trap 6.
 
 
-7. In test-results/, in the folder you run pytest from, one subfolder per test. It stays out of Git because the files are large, change on every run, and can show whatever was on the page.
+7. In test-results/, in the folder you run pytest from, with one subfolder per test. It stays out of Git because the files show whatever was on the page, they are large, and they change on every run.
 
-Why: traces and videos are often several megabytes each, and a new set is made on every run, so committing them would bloat the repo quickly. They also contain everything the page displayed, which for a real app can include personal or internal data. test-results/ is already in .gitignore from Module 01. Each run clears the folder first, so files do not pile up locally either. --output changes the folder.
+Why, in order of importance:
+- Privacy: a trace, video or screenshot shows the page exactly as it was. For a real app that can mean customer names, addresses or internal system details. The same care applies to uploading them from a public repo.
+- Size: traces and videos are often several megabytes, and a fresh set is made on every run. Git keeps every version forever, so the repo would grow quickly.
+- They are generated output, not source. Running the tests again recreates them.
+
+test-results/ is already in .gitignore from Module 01. --output changes the folder. Each run clears the folder first, so copy a trace elsewhere if you want to keep it.
 
 Common mistakes:
-- Expecting files in test-results/ to stay there. Each run starts by clearing the folder, so copy a trace somewhere else if you want to keep it.
+- Writing the folder as tests_results or tests-results. It is test-results.
+- Expecting files to stay there between runs.
 
 See: WHERE THE FILES GO, and Trap 4.
 
 
-8. pytest --browser chromium --browser webkit. It gives 46 results: each of the 23 tests runs once per browser. Before the first run, install WebKit with playwright install webkit.
+8. pytest --browser chromium --browser webkit gives 46 results, and WebKit must be installed first with playwright install webkit.
 
-Why: --browser can be given more than once, and pytest-playwright then runs every test in each browser. The browser appears at the end of each test name, such as test_todo_flow[chromium] and test_todo_flow[webkit], so you can see which browser failed, and rerun one browser with -k webkit. playwright install chromium (Module 01) only downloaded Chromium, so the other browsers need their own install.
+Why: --browser can be given more than once, and every test then runs once per browser: 23 tests x 2 browsers = 46. The browser appears at the end of each test name, such as test_todo_flow[chromium] and test_todo_flow[webkit], so you can see which browser failed and rerun just that one with -k webkit.
+
+Module 01 only ran playwright install chromium, so the other browsers are not downloaded yet. Without the install, the run fails at once with "Executable doesn't exist" and a hint to run playwright install. Installing both at once: playwright install firefox webkit
 
 Common mistakes:
 - Writing --browser chromium webkit with one option. Each browser needs its own --browser.
-- Forgetting the install. The run then fails at once with "Executable doesn't exist" (Trap 9).
 - Expecting webkit to open the Safari app. It is Safari's engine, run by Playwright, not Safari itself.
 
-See: COMMAND-LINE OPTIONS, Which browser.
+See: COMMAND-LINE OPTIONS, Which browser, and Trap 9.
 
 
-9. Upload test-results/ as a CI artifact before the job ends, then download it from the CI run's page and open the trace on your own machine.
+9. Upload test-results/ as a CI artifact before the job ends, then download it from the job's page afterwards.
 
-Why: a CI machine is created for one job and deleted afterwards, together with every file on it. An artifact is a file the CI system keeps after the job, attached to the run. On GitHub Actions, this is the actions/upload-artifact step, usually set to run only when the job failed. You download the zip, unpack it, and open the trace with playwright show-trace or https://trace.playwright.dev.
+First, what a CI machine is: when you push a commit, the CI system (for example GitHub Actions) starts a fresh virtual computer, copies your repo onto it, installs Python, the packages and the browsers, runs pytest, reports the result as a tick or a cross on your commit, and then deletes the machine. Every run starts clean, so nothing left over from a previous run can affect a test, nothing is paid for after the job, and any secrets used disappear with the machine.
 
-In a public repo, other people can download artifacts too, so the same care applies as with committing them.
+So the trace is written to test-results/ on that machine, and a few seconds later the machine and the file are gone. Saving the file is not enough: it has to leave the machine before that happens.
+
+An artifact is a file the CI system keeps after the job and attaches to the run. On GitHub Actions:
+
+```yaml
+- uses: actions/upload-artifact@v4
+  if: failure()
+  with:
+    name: traces
+    path: test-results/
+```
+
+if: failure() only uploads when the tests failed, so green runs store nothing. Afterwards, open that run's page on GitHub, download the zip, unpack it, and open the trace with playwright show-trace or at https://trace.playwright.dev.
+
+In a public repo, anyone can download artifacts, so never upload traces of a real app from one.
+
+Module 12 sets this up for real.
 
 Common mistakes:
+- Answering "save the trace to a file". It is already saved to a file. The problem is that the whole machine is deleted.
 - Printing more output to the CI log instead. Logs help, but a trace shows what the page actually looked like at every step.
 
-See: TRACES, and Module 10 for CI.
+See: TRACES, and Module 12 for CI.
 
 
 End of Module 04. Next up: Module 05, actions and input (typing, keys, clicks, hover, drag and drop, dropdowns and scrolling).
