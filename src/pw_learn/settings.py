@@ -8,10 +8,25 @@ from pathlib import Path
 
 DEFAULT_TODO_URL = "https://demo.playwright.dev/todomvc/"
 
+# saucedemo.com publishes these on its own login page, so they are not secrets.
+# A real application's credentials must come from the environment only.
+DEMO_USER = "standard_user"
+DEMO_PASSWORD = "secret_sauce"
+
 
 def todo_url() -> str:
     """The TodoMVC address: TODO_URL if it is set, otherwise the public demo."""
     return os.environ.get("TODO_URL", DEFAULT_TODO_URL)
+
+
+def shop_user() -> str:
+    """The shop username: SHOP_USER if it is set, otherwise the public demo user."""
+    return os.environ.get("SHOP_USER", DEMO_USER)
+
+
+def shop_password() -> str:
+    """The shop password: SHOP_PASSWORD if it is set, otherwise the public demo one."""
+    return os.environ.get("SHOP_PASSWORD", DEMO_PASSWORD)
 
 
 def read_env_file(path) -> dict:

@@ -8,7 +8,7 @@ __pycache__/
 test-results/
 playwright-report/
 
-# Secrets / auth state (Module 8)
+# Secrets and saved login state (Module 11)
 .env
 auth/
 *.storage.json

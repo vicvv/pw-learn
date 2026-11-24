@@ -6,13 +6,15 @@ to every test in this folder, with no import needed.
 from pathlib import Path
 
 import pytest
-from playwright.sync_api import Page
+from playwright.sync_api import Browser, Page
 
 from pw_learn import settings
-from pw_learn.pages import TodoPage
+from pw_learn.pages import LoginPage, TodoPage
 
 # Read the repo's .env file, if there is one, before any test runs.
 settings.load_env_file(Path(__file__).parent.parent / ".env")
+
+AUTH_DIR = Path(__file__).parent.parent / "auth"
 
 
 @pytest.fixture(scope="session")
@@ -85,3 +87,37 @@ def local_server():
     yield f"http://localhost:{port}/"
     server.shutdown()
     server.server_close()
+
+
+# ---------- AUTHENTICATION (Module 11) ----------
+
+@pytest.fixture(scope="session")
+def storage_state_path(browser: Browser, worker_id: str) -> Path:
+    """Log in once per worker and save the session to a file.
+
+    The file holds live cookies and tokens, so auth/ is in .gitignore.
+    One file per worker, because with -n every worker runs its own session
+    and they would otherwise write the same file at the same moment.
+    """
+    AUTH_DIR.mkdir(exist_ok=True)
+    path = AUTH_DIR / f"state-{worker_id}.json"
+
+    context = browser.new_context()
+    page = context.new_page()
+    LoginPage(page).open().login_as(settings.shop_user(), settings.shop_password())
+    context.storage_state(path=path)
+    context.close()
+
+    yield path
+    path.unlink(missing_ok=True)              # teardown: do not leave a session behind
+
+
+@pytest.fixture
+def logged_in_page(browser: Browser, browser_context_args, storage_state_path) -> Page:
+    """A page that is already logged in, with no login steps in the test."""
+    context = browser.new_context(
+        **browser_context_args, storage_state=storage_state_path
+    )
+    page = context.new_page()
+    yield page
+    context.close()
