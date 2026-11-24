@@ -44,3 +44,44 @@ def mobile_page(playwright, browser, browser_name):
     page = context.new_page()
     yield page                                 # the test runs here
     context.close()                            # teardown: runs even if the test failed
+
+
+@pytest.fixture(scope="session")
+def api_request_context(playwright):
+    """An HTTP client with no browser, for API tests (Module 10)."""
+    context = playwright.request.new_context(
+        extra_http_headers={"Accept": "application/json"}
+    )
+    yield context
+    context.dispose()
+
+
+@pytest.fixture(scope="session")
+def local_server():
+    """A tiny HTTP server on localhost, so tests have a real origin.
+
+    Browsers only allow geolocation and similar features on a secure origin,
+    which means https:// or http://localhost. A page from set_content has no
+    origin at all. Using localhost also avoids depending on any external site.
+    """
+    import http.server
+    import socketserver
+    import threading
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"<h1>local test page</h1>")
+
+        def log_message(self, *args):
+            pass                              # keep the test output clean
+
+    server = socketserver.TCPServer(("127.0.0.1", 0), Handler)   # port 0: any free port
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield f"http://localhost:{port}/"
+    server.shutdown()
+    server.server_close()
