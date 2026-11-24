@@ -1,7 +1,9 @@
+axe-playwright-python==0.1.9
 playwright==1.65.2
 pytest==9.2.0
 pytest-html==4.2.0
 pytest-playwright==0.10.0
+pytest-playwright-visual-snapshot==0.5.1
 pytest-rerunfailures==16.7
 pytest-xdist==3.8.0
 -e .
