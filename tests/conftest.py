@@ -121,3 +121,21 @@ def logged_in_page(browser: Browser, browser_context_args, storage_state_path) -
     page = context.new_page()
     yield page
     context.close()
+
+# ---------- REPORTING (Module 12) ----------
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Record the page's URL and title on a failed test, so reports show
+    where the browser was when it failed."""
+    outcome = yield
+    report = outcome.get_result()
+    if report.when != "call" or not report.failed:
+        return
+    page = item.funcargs.get("page") or item.funcargs.get("logged_in_page")
+    if page is None:
+        return
+    try:
+        report.sections.append(("Browser state", f"url: {page.url}\ntitle: {page.title()}"))
+    except Exception:
+        pass            # the page may already be closed; never fail the report

@@ -21,3 +21,6 @@ restructure.sh
 *.egg-info/
 build/
 dist/
+# Reports
+report*.html
+results*.xml

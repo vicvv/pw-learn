@@ -1,0 +1,101 @@
+name: Playwright tests
+
+# When this workflow runs.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 2 * * *"        # every night at 02:00 UTC
+  workflow_dispatch:            # and a button in the Actions tab
+
+jobs:
+  smoke:
+    name: Smoke tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install browsers
+        run: playwright install --with-deps chromium
+
+      - name: Run smoke tests
+        run: pytest -m smoke -n 2 --tracing retain-on-failure --junit-xml=results.xml --html=report.html --self-contained-html
+        env:
+          SHOP_USER: ${{ secrets.SHOP_USER }}
+          SHOP_PASSWORD: ${{ secrets.SHOP_PASSWORD }}
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-report
+          path: |
+            report.html
+            results.xml
+          retention-days: 7
+
+      - name: Upload traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-traces
+          path: test-results/
+          retention-days: 7
+
+  full:
+    name: Full suite (${{ matrix.browser }})
+    needs: smoke                       # only runs if the smoke job passed
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false                 # one browser failing does not cancel the others
+      matrix:
+        browser: [chromium, firefox]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install browsers
+        run: playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run the full suite
+        run: pytest --browser ${{ matrix.browser }} -n 2 --reruns 1 --tracing retain-on-failure --junit-xml=results-${{ matrix.browser }}.xml --html=report-${{ matrix.browser }}.html --self-contained-html
+        env:
+          SHOP_USER: ${{ secrets.SHOP_USER }}
+          SHOP_PASSWORD: ${{ secrets.SHOP_PASSWORD }}
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-report-${{ matrix.browser }}
+          path: |
+            report-${{ matrix.browser }}.html
+            results-${{ matrix.browser }}.xml
+          retention-days: 7
+
+      - name: Upload traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-traces-${{ matrix.browser }}
+          path: test-results/
+          retention-days: 7
